@@ -212,4 +212,37 @@ function print_array($arr)
 		echo "</pre><br>";
 	}
 }
+
+###############################################################################################################
+
+# FUNCTION: get_ip
+# DESCRIPTION: returns current client IP address
+
+function get_ip()
+{
+    if (!empty($_SERVER['HTTP_CLIENT_IP']))
+    {
+      $ip=$_SERVER['HTTP_CLIENT_IP'];
+    }
+    elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) 
+    {
+      $ip=$_SERVER['HTTP_X_FORWARDED_FOR'];
+    }
+    else
+    {
+      $ip=$_SERVER['REMOTE_ADDR'];
+    }
+    return $ip;
+}
+
+###############################################################################################################
+
+# FUNCTION: checkbox_to_bool
+# DESCRIPTION: convert 'on' values to TRUE
+
+function checkbox_to_bool($val)
+{
+	return ($val == 'on');
+}
+
  ?>

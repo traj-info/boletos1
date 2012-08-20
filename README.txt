@@ -1,4 +1,31 @@
-﻿v0.1 
+﻿v0.2
+20/08/12 - Francisco
+
+#descrição
+Estruturação da classe do plugin e seus recursos; promeiro formulário criado (pedido).
+
+#changelog
+Implementado custom post Serviço;
+Implementado backend configurações globais;
+Adaptado esqueleto original da classe para utilização das classes que servem de base para a construção de plugins;
+Criado modelo de formulário na página "Pedido", usando parcialmente o bootstrap para estilização, masked input, css próprio em style-boletos.css;
+Criado o modelo de dados no workbench e criada a respectiva tabela no banco wp_boletos1;
+Programado mecanismo de url rewrite para a página "ver boleto" e "servicos", usando API do WP;
+Acrescentada função get_ip em util.php;
+Inclusos arquivos básicos para geração de boleto do Santander. Falta adaptação do código;
+Escolhido template a ser usado em definitivo no site
+>>> NOVOS ESTILOS DE CSS DEVEM SER COLOCADOS EM style-boletos.css <<<;
+
+#known issues
+vários ainda
+
+#todo
+vide linhas "//TODO" no source code
+vide especificações (foram modificadas!)
+
+
+=====================================================================================
+v0.1 
 12/08/12 - Francisco
 
 #descrição
