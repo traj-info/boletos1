@@ -139,7 +139,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		?>
 		<div class="alignright">
 			<ul class="nav nav-pills">
-			  <li class="active">ETAPA 1: Cadastro</a></li>
+			  <li class="active">ETAPA 1: Cadastro</li>
 			  <li>ETAPA 2: Revisão</li>
 			  <li>ETAPA 3: Boleto</li>
 			</ul>
@@ -172,11 +172,13 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			<div class="controls">
 				<input type="text" class="input-xlarge" id="nome" name="nome">
 			</div>
+			</div>
 			
 			<div class="control-group">
 			<label class="control-label" for="cpf">CPF:</label>
 			<div class="controls">
 				<input type="text" class="input-medium" id="cpf" name="cpf">
+			</div>
 			</div>
 			
 			<div class="control-group">
@@ -184,11 +186,13 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			<div class="controls">
 				<input type="text" class="input-xlarge" id="instituicao" name="instituicao">
 			</div>
+			</div>
 			
 			<div class="control-group">
 			<label class="control-label" for="email">E-mail:</label>
 			<div class="controls">
 				<input type="text" class="input-xlarge" id="email" name="email">
+			</div>
 			</div>
 			
 			<div class="control-group">
@@ -196,11 +200,13 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			<div class="controls">
 				<input type="text" class="input-medium" id="telefone" name="telefone">
 			</div>
+			</div>
 			
 			<div class="control-group">
 			<label class="control-label" for="celular">Celular:</label>
 			<div class="controls">
 				<input type="text" class="input-medium" id="celular" name="celular">
+			</div>
 			</div>
 			
 			<div class="control-group">
@@ -209,17 +215,20 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 				<textarea name="endereco" id="endereco" class="input-xlarge" rows="3" cols="150"></textarea>
 				<p class="help-block">Exemplo: Av. Paulista, 2200 - cj. 161</p>
 			</div>
+			</div>
 			
 			<div class="control-group">
 			<label class="control-label" for="cep">CEP:</label>
 			<div class="controls">
 				<input type="text" class="input-small" id="cep" name="cep">
 			</div>
+			</div>
 			
 			<div class="control-group">
 			<label class="control-label" for="cidade">Cidade:</label>
 			<div class="controls">
 				<input type="text" class="input-medium" id="cidade" name="cidade">
+			</div>
 			</div>
 			
 			<div class="control-group">
@@ -256,12 +265,14 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 				<option value="to">Tocantins</option>
 				</select>
 			</div>
+			</div>
 			
 			
 			<div class="control-group">
 			<label class="control-label" for="descricao"><?php echo $s['label_descricao']; ?>:</label>
 			<div class="controls">
 				<textarea name="descricao" id="descricao" class="input-xxlarge" rows="5" cols="150"></textarea>
+			</div>
 			</div>
 			
 			<?php if ($s['permitir_upload']) : ?>
@@ -279,6 +290,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 					</div>
 				</div>
 			<button class='btn btn-success' id='novo-arquivo' onclick='return false;'><i class="icon-plus icon-white"></i> adicionar outro arquivo...</button>					
+			</div>
 			</div>
 			
 			<script type="text/javascript">
@@ -358,15 +370,82 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 	# DESCRIPTION: renderiza a página Painel de Boletos, shortcode trajettoria-painel-boletos
 	public static function pagina_painel_boletos()
 	{
-		echo "Página Painel de Boletos do plugin";
-		
+		global $wpdb;
+	
 		// abaixo: exemplos
-		echo self::_helper_boleto_link('JNDHF8Y4GRUFHDJF', '0087998', '35941385854'); 
+		// echo self::_helper_boleto_link('JNDHF8Y4GRUFHDJF', '0087998', '35941385854'); 
+		// $prod_id = get_query_var('prod_id');
+		// echo "<br><br>prod_id = " . $prod_id;
+		// echo "<br><br>valor da propriedade 'label': " . self::_get_setting('label_descricao');
 		
-		$prod_id = get_query_var('prod_id');
+		$boletos = $wpdb->get_results("SELECT * FROM traj_boletos");
+		$startingBol = 1;
+		$endingBol = 20;
+		?>
 		
-		echo "<br><br>prod_id = " . $prod_id;
-		echo "<br><br>valor da propriedade 'label': " . self::_get_setting('label_descricao'); 		
+		<div class="alignright">
+			<ul class="nav nav-pills align-right">
+				<li><a>Boletos</a></li>
+				<li class="dropdown">
+					<a class="dropdown-toggle" data-toggle="dropdown" href="#">
+			   			Clientes <b class="caret"></b>
+					</a>
+			    	<ul class="dropdown-menu">
+			      		<?php 
+			      			foreach ( $boletos as $bol ) {
+			      				echo "<li><a href='?&cpf=$bol->cpf'>$bol->nome</li></a>";
+			      			}
+			      		?>
+			    	</ul>
+				</li>
+			</ul>
+		</div>
+		
+		<table class="table table-striped" id="bol-table" >
+			<thead>
+				<tr class="bol-tpagination">
+					<th colspan="9">Mostrando boletos <?php echo $startingBol; ?> a <?php echo $endingBol; ?> | Implementar Paginação Ajax | Boletos por página: </th>
+				</tr>
+				<tr class="bol-thead">
+					<th class="bol-check"></th>
+					<th class="bol-nossonumero">Nosso Número</th>
+					<th class="bol-dtemissao">Dt. Emissão</th>
+					<th class="bol-dtvencimento">Dt. vencimento</th>
+					<th class="bol-cliente">Cliente</th>
+					<th class="bol-servico">Serviço</th>
+					<th class="bol-statusbol">A</th>
+					<th class="bol-statuspedido">B</th>
+					<th class="bol-opcoes">Opções</th></tr>
+			</thead>
+			<tbody>
+				<?php
+					foreach ( $boletos as $bol ) {
+						echo "<tr class='bol-$bol->id'>";
+						echo "	<td class='bol-check'><input type='checkbox' name='boleto[]' value='$bol->id' /></td>
+								<td class='bol-nossonumero'>$bol->nosso_numero</td>
+								<td class='bol-dtemissao'>$bol->data_criacao</td>
+								<td class='bol-dtvencimento'>$bol->data_vencimento</td>
+								<td class='bol-cliente'>$bol->nome</td>
+								<td class='bol-servico'>$bol->descricao</td>
+								<td class='bol-statusbol'>$bol->status_boleto</td>
+								<td class='bol-statuspedido'>$bol->status_pedido</td>
+								<td class='bol-opcoes'>Implementar Opções</td>";
+						echo "</tr>";
+					}
+				?>
+			</tbody>
+		</table>
+		
+		<?php
+		
+		foreach ( $boletos as $bol ) {
+			echo "<pre>";
+			print_r($bol);
+			echo "</pre>";
+		}
+		
+		
+	
 	}
 	
 	###############################################################################################################

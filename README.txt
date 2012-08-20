@@ -1,4 +1,24 @@
-﻿v0.2
+﻿v0.3
+20/08/12 - Renato
+#descrição
+Familiarização com o código, criação da massa de testes e início do desenvolvimento do painel de boletos
+
+#changelog
+Corrigidos alguns erros de marcação da página de pedidos
+Formatada e populada a tabela de boletos
+
+#known issues
+CSS - padding das células está fazendo a tabela exceder a largura do elemento pai
+
+#todo
+Implementar query strings
+Implementar resumo de boletos (pago, não pago, vencido)
+Implementar 'quick change' (input 'nosso número' com botões marcar como pago, não pago, etc)
+Implementar paginação
+Implementar opções (última coluna)
+
+=====================================================================================
+v0.2
 20/08/12 - Francisco
 
 #descrição
