@@ -1,4 +1,25 @@
-﻿v0.3
+﻿v0.35
+20/08/12 - Renato
+#descrição
+Familiarização com o código, criação da massa de testes e início do desenvolvimento do painel de boletos
+
+#changelog
+Implementadas as query strings
+Implementado resumo de boletos (pago, não pago, vencido)
+Implementado 'quick-change' (input 'nosso número' com botões marcar como pago, não pago, etc)
+Implementado modal
+Melhorada a lógica para imprimir os valores dos boletos somados já no query do mysql evitando looping e otimizando consultas
+Corrigida a lógica para recuperar os dados dos boletos somente depois de atualizações via 'quick-change'
+
+#known issues
+CSS - padding das células está fazendo a tabela exceder a largura do elemento pai
+
+#todo
+Implementar paginação
+Implementar opções (última coluna)
+
+=====================================================================================
+v0.3
 20/08/12 - Renato
 #descrição
 Familiarização com o código, criação da massa de testes e início do desenvolvimento do painel de boletos

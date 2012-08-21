@@ -370,82 +370,191 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 	# DESCRIPTION: renderiza a página Painel de Boletos, shortcode trajettoria-painel-boletos
 	public static function pagina_painel_boletos()
 	{
+		
 		global $wpdb;
-	
+		
 		// abaixo: exemplos
 		// echo self::_helper_boleto_link('JNDHF8Y4GRUFHDJF', '0087998', '35941385854'); 
 		// $prod_id = get_query_var('prod_id');
 		// echo "<br><br>prod_id = " . $prod_id;
 		// echo "<br><br>valor da propriedade 'label': " . self::_get_setting('label_descricao');
 		
-		$boletos = $wpdb->get_results("SELECT * FROM traj_boletos");
-		$startingBol = 1;
-		$endingBol = 20;
-		?>
-		
-		<div class="alignright">
-			<ul class="nav nav-pills align-right">
-				<li><a>Boletos</a></li>
-				<li class="dropdown">
-					<a class="dropdown-toggle" data-toggle="dropdown" href="#">
-			   			Clientes <b class="caret"></b>
-					</a>
-			    	<ul class="dropdown-menu">
-			      		<?php 
-			      			foreach ( $boletos as $bol ) {
-			      				echo "<li><a href='?&cpf=$bol->cpf'>$bol->nome</li></a>";
-			      			}
-			      		?>
-			    	</ul>
-				</li>
-			</ul>
-		</div>
-		
-		<table class="table table-striped" id="bol-table" >
-			<thead>
-				<tr class="bol-tpagination">
-					<th colspan="9">Mostrando boletos <?php echo $startingBol; ?> a <?php echo $endingBol; ?> | Implementar Paginação Ajax | Boletos por página: </th>
-				</tr>
-				<tr class="bol-thead">
-					<th class="bol-check"></th>
-					<th class="bol-nossonumero">Nosso Número</th>
-					<th class="bol-dtemissao">Dt. Emissão</th>
-					<th class="bol-dtvencimento">Dt. vencimento</th>
-					<th class="bol-cliente">Cliente</th>
-					<th class="bol-servico">Serviço</th>
-					<th class="bol-statusbol">A</th>
-					<th class="bol-statuspedido">B</th>
-					<th class="bol-opcoes">Opções</th></tr>
-			</thead>
-			<tbody>
-				<?php
-					foreach ( $boletos as $bol ) {
-						echo "<tr class='bol-$bol->id'>";
-						echo "	<td class='bol-check'><input type='checkbox' name='boleto[]' value='$bol->id' /></td>
-								<td class='bol-nossonumero'>$bol->nosso_numero</td>
-								<td class='bol-dtemissao'>$bol->data_criacao</td>
-								<td class='bol-dtvencimento'>$bol->data_vencimento</td>
-								<td class='bol-cliente'>$bol->nome</td>
-								<td class='bol-servico'>$bol->descricao</td>
-								<td class='bol-statusbol'>$bol->status_boleto</td>
-								<td class='bol-statuspedido'>$bol->status_pedido</td>
-								<td class='bol-opcoes'>Implementar Opções</td>";
-						echo "</tr>";
+		if ( current_user_can('manage_options') ) {
+			
+			$menu = '<div class="alignright">';
+			$menu .= '	<ul class="nav nav-pills">';
+			$menu .=		'<li '; 
+			if( !isset($_GET['modo']) || $_GET['modo'] != 'clientes' ) { 
+				$menu .= "class=active"; 
+			}
+			$menu .= '><a href="?modo=todos">Boletos</a></li>';
+			$menu .=		'<li ';
+			if( $_GET['modo'] == 'clientes' ) { 
+				$menu .= "class=active"; 
+			}
+			$menu .= '><a href="?modo=clientes">Clientes</a></li>';
+			$menu .=	'</ul>';
+			$menu .= '</div>';
+			
+			echo $menu;
+			
+			switch ( $_GET['modo'] ) {
+				
+				case 'clientes':
+					// @todo
+					break;
+				
+				default:
+					
+					// tratando formulário quick-change
+					$msg_quickChange = "";
+					if ( isset( $_POST['submit_quickchange'] ) ) {
+						
+						$result = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE nosso_numero = {$_POST['nosso_numero']}" ) );
+						if ($result['totalBoletos'] > 0) {
+							
+							switch ( $_POST['submit_quickchange'] ) {
+								case 'Marcar como pago':
+									$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_PAGO ), array( 'nosso_numero' => $_POST['nosso_numero'] ) );
+									$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi marcado como pago!</div>';
+									break;
+								case 'Marcar como não pago':
+									// checar se boleto venceu
+									if( $boletos[$bolID]->status_boleto != self::STATUS_BOLETO_VENCIDO ) {
+										$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_EM_ABERTO ), array( 'nosso_numero' => $_POST['nosso_numero'] ) );
+										$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi marcado como não-pago!</div>';
+									} else {
+										$msg_quickChange = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> venceu em ' . $boletos[$bolID]->data_vencimento . '</div>';
+									}
+									break;
+								case 'Cancelar':
+									$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_CANCELADO ), array( 'nosso_numero' => $_POST['nosso_numero'] ) );
+									$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi cancelado!</div>';
+									break;
+								case 'Excluir':
+									$wpdb->delete( self::TRAJ_BOLETOS_TABLE, array( 'nosso_numero' => $_POST['nosso_numero'] ) );
+									$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi deletado!</div>';
+									break;
+								default:
+									break;
+							}
+						} else {
+							$msg_quickChange = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> inexistente...</div>';
+						}
 					}
-				?>
-			</tbody>
-		</table>
-		
-		<?php
-		
-		foreach ( $boletos as $bol ) {
-			echo "<pre>";
-			print_r($bol);
-			echo "</pre>";
+					
+					// preparando resumo de valores dos boletos
+					$somaTotal = $wpdb->get_results( "SELECT status_boleto, sum( valor ) as total FROM " . self::TRAJ_BOLETOS_TABLE . " GROUP BY status_boleto", OBJECT_K );
+					if ( array_key_exists(self::STATUS_BOLETO_EM_ABERTO, $somaTotal) )	
+						$totalNaoPago = $somaTotal[self::STATUS_BOLETO_EM_ABERTO]->total;
+					else
+						$totalNaoPago = 0;
+					if ( array_key_exists(self::STATUS_BOLETO_PAGO, $somaTotal) )
+						$totalPago = $somaTotal[self::STATUS_BOLETO_PAGO]->total;
+					else
+						$totalPago = 0;
+					if ( array_key_exists(self::STATUS_BOLETO_VENCIDO, $somaTotal) )
+						$totalVencido = $somaTotal[self::STATUS_BOLETO_VENCIDO]->total;
+					else
+						$totalVencido = 0;
+					
+			?>	
+			
+					<div class="clear"></div>
+					
+					<div class="alert alert-info alert-big" id="resumo-boletos">
+						<div class="row-fluid">
+  							<div class="span4">Pago: <span>R$<?php echo number_format( $totalPago, 2, ',', '.' ); ?></span></div>
+  							<div class="span4">Não pago: <span>R$<?php echo number_format( $totalNaoPago, 2, ',', '.' ); ?></span></div>
+  							<div class="span4">Vencido: <span>R$<?php echo number_format( $totalVencido, 2, ',', '.' ); ?></span></div>
+						</div>
+					</div>
+					
+					<div class="alert alert-info alert-big" id="quick-change">
+						<form class="form-inline" method="POST" enctype="multipart/form-data" action="">
+							<label for="nosso_numero">Nosso Número:</label>
+							<input type="text" name="nosso_numero" class="input-small" id="nosso-numero" />
+							<input type="submit" name="submit_quickchange" value="Marcar como pago" class="btn" id="button-marcar-pago" />
+							<input type="submit" name="submit_quickchange" value="Marcar como não pago" class="btn" id="button-marcar-naopago" />
+							<input type="submit" name="submit_quickchange" value="Cancelar" class="btn" id="button-cancelar" />
+							<input type="button" value="Excluir" class="btn" id="button-excluir" data-toggle="modal" data-target="#excluirBoleto" />
+
+							<div class="modal hide fade in" id="excluirBoleto" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+							  <div class="modal-header">
+							    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+							    <h3 id="excluir-boleto-ModalLabel">Confirmar exclusão de boleto</h3>
+							  </div>
+							  <div class="modal-body">
+							    <p>Tem certeza que deseja prosseguir? Essa ação não pode ser revertida.</p>
+							  </div>
+							  <div class="modal-footer">
+							    <input type="submit" name="submit_quickchange" value="Excluir" class="btn" />
+							    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Cancelar</button>
+							  </div>
+							</div>
+							
+						</form>
+						<?php echo $msg_quickChange; ?>
+					</div>
+					
+					<table class="table table-striped" id="bol-table" >
+						<thead>
+							<tr class="bol-tpagination">
+								<th colspan="9" >
+									<div class="row-fluid">
+										<div class="span4">Mostrando boletos <?php echo $startingBol; ?> a <?php echo $endingBol; ?></div>
+										<div class="span4">Implementar Paginação Ajax</div>
+										<div class="span4">Boletos por página:</div>
+									</div> 
+								</th>
+							</tr>
+							<tr class="bol-thead">
+								<th class="bol-check"></th>
+								<th class="bol-nossonumero">Nosso Número</th>
+								<th class="bol-dtemissao">Dt. Emissão</th>
+								<th class="bol-dtvencimento">Dt. vencimento</th>
+								<th class="bol-cliente">Cliente</th>
+								<th class="bol-servico">Serviço</th>
+								<th class="bol-statusbol">A</th>
+								<th class="bol-statuspedido">B</th>
+								<th class="bol-opcoes">Opções</th></tr>
+						</thead>
+						<tbody>
+			<?php
+								
+								// recuperando boletos do banco
+								$boletos = $wpdb->get_results( "SELECT * FROM traj_boletos", OBJECT_K );
+								$startingBol = 1;
+								$endingBol = 20;
+								
+								foreach ( $boletos as $bol ) {
+									echo "<tr class='bol-$bol->id'>";
+									echo "	<td class='bol-check'><input type='checkbox' name='boleto[]' value='$bol->id' /></td>
+											<td class='bol-nossonumero'>$bol->nosso_numero</td>
+											<td class='bol-dtemissao'>$bol->data_criacao</td>
+											<td class='bol-dtvencimento'>$bol->data_vencimento</td>
+											<td class='bol-cliente'>$bol->nome</td>
+											<td class='bol-servico'>$bol->descricao</td>
+											<td class='bol-statusbol'>$bol->status_boleto</td>
+											<td class='bol-statuspedido'>$bol->status_pedido</td>
+											<td class='bol-opcoes'>Implementar Opções</td>";
+									echo "</tr>";
+								}
+			?>
+						</tbody>
+					</table>
+					
+			<?php
+					
+					
+					echo "<pre>";
+					print_r($boletos);
+					echo "</pre>";
+					
+					
+					break;
+			}
 		}
-		
-		
-	
 	}
 	
 	###############################################################################################################
