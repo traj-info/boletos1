@@ -398,6 +398,9 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			
 			echo $menu;
 			
+			// conta quantos boletos existem sempre que a página é carregada
+			$res = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE ) );
+			
 			switch ( $_GET['modo'] ) {
 				
 				case 'clientes':
@@ -420,11 +423,12 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									break;
 								case 'Marcar como não pago':
 									// checar se boleto venceu
-									if( $boletos[$bolID]->status_boleto != self::STATUS_BOLETO_VENCIDO ) {
+									$statusBoleto = $wpdb->get_var( $wpdb->prepare( "SELECT status_boleto FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE nosso_numero = " . $_POST['nosso_numero'] ) );
+									if( $statusBoleto != self::STATUS_BOLETO_VENCIDO ) {
 										$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_EM_ABERTO ), array( 'nosso_numero' => $_POST['nosso_numero'] ) );
 										$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi marcado como não-pago!</div>';
 									} else {
-										$msg_quickChange = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> venceu em ' . $boletos[$bolID]->data_vencimento . '</div>';
+										$msg_quickChange = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> passou da data de vencimento.</div>';
 									}
 									break;
 								case 'Cancelar':
@@ -458,7 +462,52 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 					else
 						$totalVencido = 0;
 					
+					// preparando paginação
+					if ( !isset($_GET['order_by']) ) {
+						$order = 'data_vencimento';
+					} else {
+						$order = $_GET['order_by'];
+					}
+					if ( !isset($_GET['sort']) ) {
+						$sort = 'desc';
+					} else {
+						$sort = $_GET['sort'];
+					}
+					if ( !isset($_GET['limit']) || $_GET['limit'] <= 0 ) {
+						$limit = 20;
+					} else {
+						$limit = $_GET['limit'];
+					}
+					if ( !isset($_GET['offset']) || $_GET['offset'] < 0 ) {
+						$offset = 0;
+					} else {
+						$offset = $_GET['offset'];
+					}
+					$boletos = $wpdb->get_results( "SELECT * FROM " . self::TRAJ_BOLETOS_TABLE . " order by $order $sort LIMIT $limit OFFSET $offset", OBJECT_K );
+					
 			?>	
+			
+					<script type="text/javascript">
+
+						jQuery(document).ready(function(){
+							jQuery("#ir-para-pagina").keyup(function(e) {
+								if(e.keyCode == 13) {
+									var offset = <?php echo $limit; ?> * (jQuery(this).val() - 1);
+									window.location = '<?php echo get_permalink() . "?modo=todos&offset="; ?>' + offset + '&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>';
+								}
+							});
+						});
+
+						jQuery(document).ready(function(){
+							jQuery("#boletos-por-pagina").keyup(function(e) {
+								if(e.keyCode == 13) {
+									var limit = (jQuery(this).val());
+									window.location = '<?php echo get_permalink() . "?modo=todos&offset=$offset"; ?>&limit=' + limit + '&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>';
+								}
+							});
+						});
+					
+					</script>
 			
 					<div class="clear"></div>
 					
@@ -497,14 +546,22 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						<?php echo $msg_quickChange; ?>
 					</div>
 					
-					<table class="table table-striped" id="bol-table" >
+					<table class="table table-striped table-custom-padding" id="bol-table" >
 						<thead>
 							<tr class="bol-tpagination">
 								<th colspan="9" >
 									<div class="row-fluid">
-										<div class="span4">Mostrando boletos <?php echo $startingBol; ?> a <?php echo $endingBol; ?></div>
-										<div class="span4">Implementar Paginação Ajax</div>
-										<div class="span4">Boletos por página:</div>
+										<div class="span4 center"><div>Mostrando boletos <?php echo $offset+1; ?> a <?php if($limit > sizeof($boletos)) echo sizeof($boletos); else echo $offset+$limit; ?></div></div>
+										<div class="span4 center pagination-custom">
+											<ul>
+												<li><a href="?modo=todos&offset=0&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_first.png" /></a></li>
+												<li><a href="?modo=todos&offset=<?php if($offset-$limit-1 <= 0) echo 0; else echo $offset-$limit-1; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_previous.png" /></a></li>
+												<li><input type="text" class="input-mini" id="ir-para-pagina"/></li>
+												<li><a href="?modo=todos&offset=<?php if($offset+$limit+1 >= $res['totalBoletos']) echo $offset; else echo $offset+1; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_next.png" /></a></a></li>
+												<li><a href="?modo=todos&offset=<?php if($res['totalBoletos']-$limit <= 0) echo 0; else echo $res['totalBoletos']-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_last.png" /></a></a></li>
+											</ul>
+										</div>
+										<div class="span4 center form-inline"><label for="boletos-por-pagina">Boletos por página:</label><input type="text" name="limit" class="input-mini" id="boletos-por-pagina" /></div>
 									</div> 
 								</th>
 							</tr>
@@ -521,11 +578,6 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						</thead>
 						<tbody>
 			<?php
-								
-								// recuperando boletos do banco
-								$boletos = $wpdb->get_results( "SELECT * FROM traj_boletos", OBJECT_K );
-								$startingBol = 1;
-								$endingBol = 20;
 								
 								foreach ( $boletos as $bol ) {
 									echo "<tr class='bol-$bol->id'>";

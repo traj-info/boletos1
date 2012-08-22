@@ -1,5 +1,21 @@
-﻿v0.35
-20/08/12 - Renato
+﻿v0.38
+22/08/12 - Renato
+#descrição
+Familiarização com o código, criação da massa de testes e início do desenvolvimento do painel de boletos
+
+#changelog
+Implementada paginação
+Consertado CSS - padding das células estava fazendo a tabela exceder a largura do elemento pai
+
+#known issues
+Tratar parâmetros GET com função do wordpress
+
+#todo
+Implementar opções (última coluna)
+
+=====================================================================================
+v0.35
+21/08/12 - Renato
 #descrição
 Familiarização com o código, criação da massa de testes e início do desenvolvimento do painel de boletos
 
