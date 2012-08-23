@@ -4211,6 +4211,13 @@ button.close {
 .hidden-desktop {
   display: none !important;
 }
+
+/* hack Renato */
+#loginform input
+{
+	height: auto !important;
+}
+
 @media (max-width: 767px) {
   .visible-phone {
     display: inherit !important;

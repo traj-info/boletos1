@@ -139,9 +139,9 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		?>
 		<div class="alignright">
 			<ul class="nav nav-pills">
-			  <li class="active">ETAPA 1: Cadastro</li>
-			  <li>ETAPA 2: Revisão</li>
-			  <li>ETAPA 3: Boleto</li>
+			  <li class="active"><a>ETAPA 1: Cadastro</a></li>
+			  <li><a>ETAPA 2: Revisão</a></li>
+			  <li><a>ETAPA 3: Boleto</a></li>
 			</ul>
 		</div>
 		<div class="clear"></div>
@@ -410,7 +410,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 				default:
 					
 					// tratando formulário quick-change
-					$msg_quickChange = "";
+					$msg["quick_change"] = "";
 					if ( isset( $_POST['submit_quickchange'] ) ) {
 						
 						$result = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE nosso_numero = {$_POST['nosso_numero']}" ) );
@@ -419,31 +419,79 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 							switch ( $_POST['submit_quickchange'] ) {
 								case 'Marcar como pago':
 									$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_PAGO ), array( 'nosso_numero' => $_POST['nosso_numero'] ) );
-									$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi marcado como pago!</div>';
+									$msg["quick_change"] = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi marcado como pago!</div>';
 									break;
 								case 'Marcar como não pago':
-									// checar se boleto venceu
+									// checa se boleto venceu
 									$statusBoleto = $wpdb->get_var( $wpdb->prepare( "SELECT status_boleto FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE nosso_numero = " . $_POST['nosso_numero'] ) );
 									if( $statusBoleto != self::STATUS_BOLETO_VENCIDO ) {
 										$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_EM_ABERTO ), array( 'nosso_numero' => $_POST['nosso_numero'] ) );
-										$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi marcado como não-pago!</div>';
+										$msg["quick_change"] = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi marcado como não-pago!</div>';
 									} else {
-										$msg_quickChange = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> passou da data de vencimento.</div>';
+										$msg["quick_change"] = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> passou da data de vencimento.</div>';
 									}
 									break;
 								case 'Cancelar':
 									$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_CANCELADO ), array( 'nosso_numero' => $_POST['nosso_numero'] ) );
-									$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi cancelado!</div>';
+									$msg["quick_change"] = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi cancelado!</div>';
 									break;
 								case 'Excluir':
 									$wpdb->delete( self::TRAJ_BOLETOS_TABLE, array( 'nosso_numero' => $_POST['nosso_numero'] ) );
-									$msg_quickChange = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi deletado!</div>';
+									$msg["quick_change"] = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> foi deletado!</div>';
 									break;
 								default:
 									break;
 							}
 						} else {
-							$msg_quickChange = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> inexistente...</div>';
+							$msg["quick_change"] = '<div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">×</button>Boleto <strong>' . $_POST['nosso_numero'] . '</strong> inexistente...</div>';
+						}
+					}
+					
+					// tratando formulário bulk-actions
+					if ( isset( $_POST['submit_bulkaction'] ) ) {
+						
+						$boletoID = preg_replace('/[^-0-9]/', '', $_POST['boleto'] );
+						
+						switch ( $_POST['bulk-action'] ) {
+							case "pago":
+								foreach ( $boletoID as $id ) {
+									$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_PAGO ), array( 'id' => $id ) );
+								}
+								// @todo verificar se alterações no banco obtiveram mesmo sucesso para definir mensagem de resultado... aqui e em todas as $msg
+								$msg["bulk_action"] = '<div class="alert fade in"><button type="button" class="close" data-dismiss="alert">×</button>Os boletos selecionados foram marcados como pagos!</div>';
+								break;
+							case "nao-pago":
+								// checa se boleto venceu
+								foreach ( $boletoID as $id ) {
+									$statusBoleto = $wpdb->get_var( $wpdb->prepare( "SELECT status_boleto FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE id = " . $id ) );
+									if( $statusBoleto != self::STATUS_BOLETO_VENCIDO ) {
+										$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_EM_ABERTO ), array( 'id' => $id ) );
+									}
+								}
+								break;
+							case "cancelar":
+								foreach ( $boletoID as $id ) {
+									$wpdb->update( self::TRAJ_BOLETOS_TABLE, array( 'status_boleto' => self::STATUS_BOLETO_CANCELADO ), array( 'id' => $id ) );
+								}
+								break;
+							case "excluir":
+								// @todo implementar modal na selectbox caso excluir
+								foreach ( $boletoID as $id ) {
+									$wpdb->delete( self::TRAJ_BOLETOS_TABLE, array( 'id' => $id ) );
+								}
+								break;
+							case "enviar":
+								// A opção “enviar para cliente” envia um e-mail ao cliente, contendo um link para “ver-boleto” usando a key como query string.
+								$ids = implode(", ", $boletoID);
+								$boletos = $wpdb->get_results( "SELECT id, email, nome FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE id IN (" . $ids . ")", OBJECT_K );
+								foreach ( $boletos as $bol ) {
+									// @todo preparar texto de subject e content
+									$content = self::_helper_boleto_link( $bol->key );
+									self::_send_mail($bol->email, "Boleto", $content);
+								}
+								break;
+							default:
+								break;
 						}
 					}
 					
@@ -461,6 +509,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						$totalVencido = $somaTotal[self::STATUS_BOLETO_VENCIDO]->total;
 					else
 						$totalVencido = 0;
+						
 					
 					// preparando paginação
 					if ( !isset($_GET['order_by']) ) {
@@ -543,65 +592,78 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 							</div>
 							
 						</form>
-						<?php echo $msg_quickChange; ?>
+						<?php echo $msg["quick_change"]; ?>
 					</div>
 					
-					<table class="table table-striped table-custom-padding" id="bol-table" >
-						<thead>
-							<tr class="bol-tpagination">
-								<th colspan="9" >
-									<div class="row-fluid">
-										<div class="span4 center"><div>Mostrando boletos <?php echo $offset+1; ?> a <?php if($limit > sizeof($boletos)) echo sizeof($boletos); else echo $offset+$limit; ?></div></div>
-										<div class="span4 center pagination-custom">
-											<ul>
-												<li><a href="?modo=todos&offset=0&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_first.png" /></a></li>
-												<li><a href="?modo=todos&offset=<?php if($offset-$limit-1 <= 0) echo 0; else echo $offset-$limit-1; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_previous.png" /></a></li>
-												<li><input type="text" class="input-mini" id="ir-para-pagina"/></li>
-												<li><a href="?modo=todos&offset=<?php if($offset+$limit+1 >= $res['totalBoletos']) echo $offset; else echo $offset+1; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_next.png" /></a></a></li>
-												<li><a href="?modo=todos&offset=<?php if($res['totalBoletos']-$limit <= 0) echo 0; else echo $res['totalBoletos']-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_last.png" /></a></a></li>
-											</ul>
-										</div>
-										<div class="span4 center form-inline"><label for="boletos-por-pagina">Boletos por página:</label><input type="text" name="limit" class="input-mini" id="boletos-por-pagina" /></div>
-									</div> 
-								</th>
-							</tr>
-							<tr class="bol-thead">
-								<th class="bol-check"></th>
-								<th class="bol-nossonumero">Nosso Número</th>
-								<th class="bol-dtemissao">Dt. Emissão</th>
-								<th class="bol-dtvencimento">Dt. vencimento</th>
-								<th class="bol-cliente">Cliente</th>
-								<th class="bol-servico">Serviço</th>
-								<th class="bol-statusbol">A</th>
-								<th class="bol-statuspedido">B</th>
-								<th class="bol-opcoes">Opções</th></tr>
-						</thead>
-						<tbody>
-			<?php
+					<form method="POST" enctype="multipart/form-data" action="" class="form-inline">
+						<table class="table table-striped table-custom-padding" id="bol-table" >
+							<thead>
+								<tr class="bol-tpagination">
+									<th colspan="9" >
+										<div class="row-fluid">
+											<div class="span4 center"><div>Mostrando boletos <?php echo $offset+1; ?> a <?php echo sizeof($boletos) + $offset; ?></div></div>
+											<div class="span4 center pagination-custom">
+												<ul>
+													<li><a href="?modo=todos&offset=0&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_first.png" /></a></li>
+													<li><a href="?modo=todos&offset=<?php if ($offset-$limit-1 <= 0) echo 0; else echo $offset-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_previous.png" /></a></li>
+													<li><input type="text" class="input-mini" id="ir-para-pagina"/></li>
+													<li><a href="?modo=todos&offset=<?php if ($offset+$limit+1 >= $res['totalBoletos']) echo $offset; else echo $offset+$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_next.png" /></a></a></li>
+													<li><a href="?modo=todos&offset=<?php if ($res['totalBoletos']-$limit <= 0) echo 0; else echo $res['totalBoletos']-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><img src="<?php echo plugin_dir_url(__FILE__) ?>img/icons/resultset_last.png" /></a></a></li>
+												</ul>
+											</div>
+											<div class="span4 center form-inline"><label for="boletos-por-pagina">Boletos por página:</label><input type="text" name="limit" class="input-mini" id="boletos-por-pagina" /></div>
+										</div> 
+									</th>
+								</tr>
+								<tr class="bol-thead">
+									<th class="bol-check"></th>
+									<th class="bol-nossonumero"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nosso_numero"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Nosso Número</a></th>
+									<th class="bol-dtemissao"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "data_criacao"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Dt. Emissão</a></th>
+									<th class="bol-dtvencimento"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "data_vencimento"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Dt. vencimento</a></th>
+									<th class="bol-cliente"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nome"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Cliente</a></th>
+									<th class="bol-servico"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "serviço"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Serviço</a></th>
+									<th class="bol-statusbol"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_boleto"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">A</a></th>
+									<th class="bol-statuspedido"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_pedido"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">B</a></th>
+									<th class="bol-opcoes">Opções</th></tr>
+							</thead>
+							<tbody>
+				
 								
-								foreach ( $boletos as $bol ) {
-									echo "<tr class='bol-$bol->id'>";
-									echo "	<td class='bol-check'><input type='checkbox' name='boleto[]' value='$bol->id' /></td>
-											<td class='bol-nossonumero'>$bol->nosso_numero</td>
-											<td class='bol-dtemissao'>$bol->data_criacao</td>
-											<td class='bol-dtvencimento'>$bol->data_vencimento</td>
-											<td class='bol-cliente'>$bol->nome</td>
-											<td class='bol-servico'>$bol->descricao</td>
-											<td class='bol-statusbol'>$bol->status_boleto</td>
-											<td class='bol-statuspedido'>$bol->status_pedido</td>
-											<td class='bol-opcoes'>Implementar Opções</td>";
-									echo "</tr>";
-								}
-			?>
-						</tbody>
-					</table>
+							<?php foreach ( $boletos as $bol ) { ?>
+								<tr class='bol-$bol->id'>
+									<td class="bol-check"><input type='checkbox' name='boleto[]' value='<?php echo $bol->id ?>' /></td>
+									<td class="bol-nossonumero"><?php echo $bol->nosso_numero; ?></td>
+									<td class="bol-dtemissao"><?php echo substr_replace( date_to_br( $bol->data_criacao ), "", 10 ); ?></td>			
+									<td class="bol-dtvencimento"><?php echo substr_replace( date_to_br( $bol->data_vencimento ), "", 10 ); ?></td>
+									<td class="bol-cliente"><?php echo $bol->nome; ?></td>
+									<td class="bol-servico"><?php echo $bol->descricao; ?></td>
+									<td class="bol-statusbol"><?php echo $bol->status_boleto; ?></td>
+									<td class="bol-statuspedido"><?php echo $bol->status_pedido; ?></td>
+									<td class="bol-opcoes">Implementar Opções</td>
+								</tr>
+							<?php } ?>
+				
+							</tbody>
+						</table>
+						
+						<div class="form-actions">
+							<label for="bulk-action">Com marcados:</label>
+							<select name="bulk-action" id="bulk-action">
+								<option value="pago">Marcar como pago</option>
+								<option value="nao-pago">Marcar como não pago</option>
+								<option value="cancelar">Cancelar</option>
+								<option value="excluir">Excluir</option>
+								<option value="enviar">Enviar para cliente</option>
+							</select>
+							<input type="submit" class="btn btn-primary btn-submit" name="submit_bulkaction" value="OK" />
+						</div>
+						
+					</form>
 					
 			<?php
 					
 					
-					echo "<pre>";
-					print_r($boletos);
-					echo "</pre>";
+					print_array($boletos);
 					
 					
 					break;
@@ -650,8 +712,19 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 
 	# FUNCTION: _send_mail
 	# DESCRIPTION: envia um e-mail usando o servidor SMTP informado nas configurações globais do plugin
-	private static function _send_mail($to, $subject, $content)
+	private static function _send_mail( $to, $subject, $content )
 	{
+
+		$host = self::_get_setting( "email_host" );
+		$auth = self::_get_setting( "email_auth" );
+		$secure = self::_get_setting( "email_secure" );
+		$port = self::_get_setting( "email_porta" );
+		$username = self::_get_setting( "email_username" );
+		$password = self::_get_setting( "email_senha" );
+		$from = self::_get_setting( "email" );
+		$name = self::_get_setting( "email_from_alias" );
+		
+		SendMail($host, $auth, $secure, $port, $username, $password, $from, $name, $to, $subject, $content);
 		
 	}
 

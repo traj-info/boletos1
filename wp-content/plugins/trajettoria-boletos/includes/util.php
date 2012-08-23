@@ -59,7 +59,7 @@ function check_cpf($cpf)
 # FUNCTION: SendMail
 # DESCRIPTION: envia um e-mail via SMTP
 
-function SendMail($from, $to, $subject, $content)
+function SendMail($host, $auth, $secure, $port, $username, $password, $from, $name, $to, $subject, $content)
 {
 	// Create PHPMailer object
 	// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -68,17 +68,17 @@ function SendMail($from, $to, $subject, $content)
 	// Define server connection info
 	// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 	$mail->IsSMTP(); 												# Will be SMTP
-	$mail->Host 		= 'smtp.gmail.com'; 						# SMTP server add
-	$mail->SMTPAuth 	= 'true';	 								# Does it use SMTP auth? (optional)
-	$mail->SMTPSecure 	= 'ssl'; 									# Sets the prefix to the server
-	$mail->Port			= '465';									# Set the SMTP port for the server
-	$mail->Username		= 'trajettoria.ti@gmail.com';				# SMTP server user
-	$mail->Password 	= base64_decode('SenhaCodificadaComBase64');# SMTP server password
+	$mail->Host 		= $host; 									# SMTP server add
+	$mail->SMTPAuth 	= $auth;	 								# Does it use SMTP auth? (optional)
+	$mail->SMTPSecure 	= $secure; 									# Sets the prefix to the server
+	$mail->Port			= $port;									# Set the SMTP port for the server
+	$mail->Username		= $username;								# SMTP server user
+	$mail->Password 	= $password;								# SMTP server password
 
 	// Define sender
 	// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-	$mail->From = 'trajettoria.ti@gmail.com';											# Your e-mail
-	$mail->FromName = 'RFP-Trajettoria';							# Your name
+	$mail->From = $from;											# Your e-mail
+	$mail->FromName = $name;										# Your name
 
 	// Define receiver(s)
 	// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

@@ -17,8 +17,17 @@
 
 .entry-content input
 {
-	margin-bottom: 12px !important;
-	padding: 8px !important;
+	margin-bottom: 0 !important;
+}
+
+.entry-content input[type="submit"]
+{
+	padding: 4px 10px !important;
+}
+
+.entry-content select
+{
+	margin: 0 !important;
 }
 
 .entry-content label
@@ -74,11 +83,13 @@ ul.nav-pills
 	margin-top: -40px !important;
 }
 
+/* comentado por Renato: quebra o layout quando há <a> dentro da <li>
 ul.nav-pills li.active
 {
 	color: white !important;
 	background-color: #08C !important;
 }
+*/
 
 div.pagination-custom ul li
 {
@@ -88,7 +99,7 @@ div.pagination-custom ul li
 	text-indent: 0 !important;
 }
 
-.table-custom-padding tr td
+.table-custom-padding tr td, .table-custom-padding tr th
 {
 	padding: 3px 8px !important;
 }
