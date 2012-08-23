@@ -485,7 +485,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								$ids = implode(", ", $boletoID);
 								$boletos = $wpdb->get_results( "SELECT id, email, nome FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE id IN (" . $ids . ")", OBJECT_K );
 								foreach ( $boletos as $bol ) {
-									// @todo preparar texto de subject e content
+									// @todo preparar texto de subject e content 
 									$content = self::_helper_boleto_link( $bol->key );
 									self::_send_mail($bol->email, "Boleto", $content);
 								}
