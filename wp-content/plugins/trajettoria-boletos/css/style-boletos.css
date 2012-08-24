@@ -101,13 +101,17 @@ div.pagination-custom ul li
 
 .table-custom-padding tr td, .table-custom-padding tr th
 {
-	padding: 3px 8px !important;
+	padding: 9px 8px !important;
 }
 
 .center
 {
 	text-align: center !important;
-	color: #333;
-	font-size: 16px;
-	line-height: 24px;
+	vertical-align: middle !important;
+}
+
+.alert-custom-margin
+{
+	margin-bottom: 0;
+	margin-top: 8px;
 }
