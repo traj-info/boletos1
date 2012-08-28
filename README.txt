@@ -1,4 +1,44 @@
-﻿v0.38
+﻿v0.5
+28/08/12 - Renato
+#descrição
+Desenvolvimento do painel de boletos
+
+#changelog
+Semi-Implementadas opções modo "todos" (faltando excluir, ver boleto, gerar segunda-via, enviar para cliente e ver pedido)
+Semi-implementada ordenação (faltando apenas ordenar por serviço)
+Implementado "bulk actions" no rodapé
+Implementado offset/limit
+Implementado formatar data em PT_BR
+Implementado colocar select box no “boleto por página”
+Implementado select box opções
+Implementado checar se é numérico campo “nosso número”
+Implementado validar paginados
+Implementado aparecer número da página atual
+Resolvida questão legenda A/B
+Corrigido “com marcado” centralizar
+Corrigido bug css wp admin
+Corrigido bug css "active" boletos
+Corrigido bug: não está pegando valor no cabeçalho
+Corrigido BUG: validação após pressionar botões do quadro “nosso número”
+Corrigida margem do quadro de confirmação “nosso número”
+Corrigida aparência do menu paginação
+Corrigido padding td
+Corrigido tirar “ok” bulk action
+Corrigido centralizar texto do resumo de valores no topo
+Corrigido centralizar botões do quadro “nosso número”
+Corrigido table width
+Iniciado e finalizado o desenvolvimento da interface do modo "clientes"
+
+
+#known issues
+
+#todo
+Implementar restante das opções modo "todos" (excluir, ver boleto, gerar segunda-via, enviar para cliente e ver pedido)
+Implementar pop-up "ver dados pessoais" modo "clientes"
+Limpar código após mudanças de lógica para uso de ajax com jquery
+
+=====================================================================================
+v0.38
 22/08/12 - Renato
 #descrição
 Familiarização com o código, criação da massa de testes e início do desenvolvimento do painel de boletos

@@ -97,6 +97,7 @@ div.pagination-custom ul li
 	float: left;
 	background: none !important;
 	text-indent: 0 !important;
+	margin-left:3px;
 }
 
 .table-custom-padding tr td, .table-custom-padding tr th
@@ -114,4 +115,16 @@ div.pagination-custom ul li
 {
 	margin-bottom: 0;
 	margin-top: 8px;
+}
+
+.table-header .text
+{
+	position: relative;
+	top: 6px;
+}
+
+.table-header .form-inline
+{
+	position: relative;
+	top: 2px;
 }
