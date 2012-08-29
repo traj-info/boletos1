@@ -399,7 +399,10 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			echo $menu;
 			
 			// conta quantos boletos existem sempre que a página é carregada
-			$res = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE ) );
+			if( !get_query_var("cpf") )
+				$res = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE ) );
+			else
+				$res = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf=" . get_query_var("cpf") ) );
 			
 			switch ( get_query_var('modo') ) {
 				
@@ -432,7 +435,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						<table class="table table-striped table-custom-padding" id="bol-table" >
 							<thead>
 								<tr class="bol-tpagination">
-									<th colspan="9" >
+									<th colspan="6" >
 										<div class="row-fluid table-header">
 											<div class="span4 center text">Mostrando clientes <?php echo $offset+1; ?> a <?php echo sizeof($boletos) + $offset; ?></div>
 											<div class="span4 center pagination-custom">
@@ -449,24 +452,9 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 												<select name="limit" class="input-mini" id="boletos-por-pagina">
 													<option class="active"><?php echo $limit; // @todo popular dinamicamente essa select com a quantidade real de páginas até no máximo 20 ?></option>
 													<option value="1">1</option>
-													<option value="2">2</option>
-													<option value="3">3</option>
-													<option value="4">4</option>
 													<option value="5">5</option>
-													<option value="6">6</option> 
-													<option value="7">7</option>
-													<option value="8">8</option>
-													<option value="9">9</option>
 													<option value="10">10</option>
-													<option value="11">11</option>
-													<option value="12">12</option>
-													<option value="13">13</option>
-													<option value="14">14</option>
 													<option value="15">15</option>
-													<option value="16">16</option>
-													<option value="17">17</option>
-													<option value="18">18</option>
-													<option value="19">19</option>
 													<option value="20">20</option>
 												</select>
 											</div>
@@ -474,12 +462,24 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									</th>
 								</tr>
 								<tr class="bol-thead">
-									<th class="cliente-cpf"><a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "cpf"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">CPF</a></th>
-									<th class="cliente-nome"><a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nome"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Nome</a></th>
-									<th class="cliente-email"><a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "email"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">E-mail</a></th>
-									<th class="cliente-bol-status"><a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_boleto"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Boleto em aberto?</a></th>
-									<th class="cliente-pedido-status"><a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_pedido"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Pedido em aberto?</a></th>
-									<th class="cliente-opcoes">Opções</th>
+									<th class="col-head <?php if($order=="cpf" && $sort=="asc") echo "sort-asc"; elseif($order=="cpf" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "cpf"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">CPF</a>
+									</th>
+									<th class="col-head <?php if($order=="nome" && $sort=="asc") echo "sort-asc"; elseif($order=="nome" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nome"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Nome</a>
+									</th>
+									<th class="col-head <?php if($order=="email" && $sort=="asc") echo "sort-asc"; elseif($order=="email" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "email"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">E-mail</a>
+									</th>
+									<th class="col-head <?php if($order=="status_boleto" && $sort=="asc") echo "sort-asc"; elseif($order=="status_boleto" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_boleto"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Boleto em aberto?</a>
+									</th>
+									<th class="col-head <?php if($order=="status_pedido" && $sort=="asc") echo "sort-asc"; elseif($order=="status_pedido" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_pedido"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Pedido em aberto?</a>
+									</th>
+									<th class="col-head">
+										<span>Opções</span>
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -487,10 +487,10 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								
 							<?php foreach ( $clientes as $c ) { ?>
 								<tr class='cliente-$c->id'>
-									<td class="cliente-cpf"><?php echo $c->cpf; ?></td>
-									<td class="cliente-nome"><?php echo $c->nome; ?></td>
-									<td class="cliente-email"><?php echo $c->email; ?></td>
-									<td class="cliente-statusbol">
+									<td class="data cliente-cpf"><?php echo $c->cpf; ?></td>
+									<td class="data cliente-nome"><?php echo $c->nome; ?></td>
+									<td class="data cliente-email"><?php echo $c->email; ?></td>
+									<td class="data cliente-statusbol">
 										<?php 
 											$result = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) AS totalBolAbertos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf = " . $c->cpf . " AND status_boleto = " . self::STATUS_BOLETO_EM_ABERTO ) );
 											if ( $result['totalBolAbertos'] > 0 ) {
@@ -500,7 +500,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 											}
 										?>
 									</td>
-									<td class="cliente-statuspedido">
+									<td class="data cliente-statuspedido">
 										<?php
 											$result = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) AS totalPedAbertos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf=" . $c->cpf . " AND ( status_pedido = " . self::STATUS_PEDIDO_EM_EXECUCAO . " OR status_pedido = " . self::STATUS_PEDIDO_NAO_INICIADO . " )" ) );
 											if ( $result['totalPedAbertos'] > 0 ) {
@@ -510,7 +510,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 											}
 										?>
 									</td>
-									<td class="cliente-opcoes">
+									<td class="data cliente-opcoes">
 										<select name="cliente-opcao[<?php echo $c->cpf; ?>]" class="cliente-opcao">
 											<option value="selecione">Selecione</option>
 											<option value="boletos_<?php echo $c->cpf; ?>">Ver boletos/pedidos</option>
@@ -740,7 +740,20 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 							<input type="submit" name="submit_quickchange" value="Marcar como pago" class="btn" id="button-marcar-pago" />
 							<input type="submit" name="submit_quickchange" value="Marcar como não pago" class="btn" id="button-marcar-naopago" />
 							<input type="submit" name="submit_quickchange" value="Cancelar" class="btn" id="button-cancelar" />
-							<input type="button" value="Excluir" class="btn" id="button-excluir" />							
+							<input type="button" value="Excluir" class="btn" id="button-excluir" />	
+							<div class="modal hide fade in" id="excluirBoleto" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+							  <div class="modal-header">
+							    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+							    <h3 id="excluir-boleto-ModalLabel">Confirmar exclusão de boleto</h3>
+							  </div>
+							  <div class="modal-body">
+							    <p>Tem certeza que deseja prosseguir? Essa ação não pode ser revertida.</p>
+							  </div>
+							  <div class="modal-footer">
+							    <input type="submit" name="submit_quickchange" value="Excluir" class="btn" />
+							    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Cancelar</button>
+							  </div>
+							</div>				
 						</form>
 						<?php echo $msg["quick_change"]; ?>
 						<span id="msg-quick-change"></span>
@@ -755,11 +768,11 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 											<div class="span4 center text">Mostrando boletos <?php echo $offset+1; ?> a <?php echo sizeof($boletos) + $offset; ?></div>
 											<div class="span4 center pagination-custom">
 												<ul>
-													<li><a href="?modo=todos&offset=0&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button"><<</button></a></li>
-													<li><a href="?modo=todos&offset=<?php if ($offset-$limit-1 < 0) echo 0; else echo $offset-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button"><</button></a></li>
+													<li><a href="?modo=todos&offset=0&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button"><<</button></a></li>
+													<li><a href="?modo=todos&offset=<?php if ($offset-$limit-1 < 0) echo 0; else echo $offset-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button"><</button></a></li>
 													<li><input type="text" class="input-mini" id="ir-para-pagina" value="<?php echo floor($offset / $limit) + 1; ?>" /></li>
-													<li><a href="?modo=todos&offset=<?php if ($offset+$limit+1 > $res['totalBoletos']) echo $offset; else echo $offset+$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button">></button></a></li>
-													<li><a href="?modo=todos&offset=<?php if( $res['totalBoletos'] % $limit == 0 ) echo $res['totalBoletos'] - $limit; else echo $res['totalBoletos'] - $res['totalBoletos'] % $limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button">>></button></a></li>
+													<li><a href="?modo=todos&offset=<?php if ($offset+$limit+1 > $res['totalBoletos']) echo $offset; else echo $offset+$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button">></button></a></li>
+													<li><a href="?modo=todos&offset=<?php if( $res['totalBoletos'] % $limit == 0 ) echo $res['totalBoletos'] - $limit; else echo $res['totalBoletos'] - $res['totalBoletos'] % $limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button">>></button></a></li>
 												</ul>
 											</div>
 											<div class="span4 center form-inline">
@@ -767,24 +780,9 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 												<select name="limit" class="input-mini" id="boletos-por-pagina">
 													<option class="active"><?php echo $limit; // @todo popular dinamicamente essa select com a quantidade real de páginas até no máximo 20 ?></option>
 													<option value="1">1</option>
-													<option value="2">2</option>
-													<option value="3">3</option>
-													<option value="4">4</option>
 													<option value="5">5</option>
-													<option value="6">6</option> 
-													<option value="7">7</option>
-													<option value="8">8</option>
-													<option value="9">9</option>
 													<option value="10">10</option>
-													<option value="11">11</option>
-													<option value="12">12</option>
-													<option value="13">13</option>
-													<option value="14">14</option>
 													<option value="15">15</option>
-													<option value="16">16</option>
-													<option value="17">17</option>
-													<option value="18">18</option>
-													<option value="19">19</option>
 													<option value="20">20</option>
 												</select>
 											</div>
@@ -792,28 +790,45 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									</th>
 								</tr>
 								<tr class="bol-thead">
-									<th class="bol-check"></th>
-									<th class="bol-nossonumero"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nosso_numero"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Nosso Número</a></th>
-									<th class="bol-dtemissao"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "data_criacao"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Dt. Emissão</a></th>
-									<th class="bol-dtvencimento"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "data_vencimento"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Dt. Vencimento</a></th>
-									<th class="bol-cliente"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nome"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Cliente</a></th>
-									<th class="bol-servico"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "serviço"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Serviço</a></th>
-									<th class="bol-statusbol"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_boleto"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Status do Boleto</a></th>
-									<th class="bol-statuspedido"><a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_pedido"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Status do Pedido</a></th>
-									<th class="bol-opcoes">Opções</th></tr>
+									<th class="col-head"></th>
+									<th class="col-head <?php if($order=="nosso_numero" && $sort=="asc") echo "sort-asc"; elseif($order=="nosso_numero" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nosso_numero"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Nosso Número</a>
+									</th>
+									<th class="col-head <?php if($order=="data_criacao" && $sort=="asc") echo "sort-asc"; elseif($order=="data_criacao" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "data_criacao"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Dt. Emissão</a>
+									</th>
+									<th class="col-head <?php if($order=="data_vencimento" && $sort=="asc") echo "sort-asc"; elseif($order=="data_vencimento" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "data_vencimento"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Dt. Vencimento</a>
+									</th>
+									<th class="col-head <?php if($order=="nome" && $sort=="asc") echo "sort-asc"; elseif($order=="nome" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nome"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Cliente</a>
+									</th>
+									<th class="col-head <?php if($order=="servico" && $sort=="asc") echo "sort-asc"; elseif($order=="servico" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "serviço"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Serviço</a>
+									</th>
+									<th class="col-head <?php if($order=="status_boleto" && $sort=="asc") echo "sort-asc"; elseif($order=="status_boleto" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_boleto"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Status do Boleto</a>
+									</th>
+									<th class="col-head <?php if($order=="status_pedido" && $sort=="asc") echo "sort-asc"; elseif($order=="status_pedido" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_pedido"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Status do Pedido</a>
+									</th>
+									<th class="col-head bol-opcoes">
+										<span>Opções</span>
+									</th>
+								</tr>
 							</thead>
 							<tbody>
 				
 								
 							<?php foreach ( $boletos as $bol ) { ?>
 								<tr class='bol-$bol->id'>
-									<td class="bol-check"><input type='checkbox' name='boleto[]' value='<?php echo $bol->id ?>' /></td>
-									<td class="bol-nossonumero"><?php echo $bol->nosso_numero; ?></td>
-									<td class="bol-dtemissao"><?php echo substr_replace( date_to_br( $bol->data_criacao ), "", 10 ); ?></td>			
-									<td class="bol-dtvencimento"><?php echo substr_replace( date_to_br( $bol->data_vencimento ), "", 10 ); ?></td>
-									<td class="bol-cliente"><?php echo $bol->nome; ?></td>
-									<td class="bol-servico"><?php echo $bol->descricao; ?></td>
-									<td class="bol-statusbol">
+									<td class="check bol-check"><input type='checkbox' name='boleto[]' value='<?php echo $bol->id ?>' /></td>
+									<td class="data bol-nossonumero"><?php echo $bol->nosso_numero; ?></td>
+									<td class="data bol-dtemissao"><?php echo substr_replace( date_to_br( $bol->data_criacao ), "", 10 ); ?></td>			
+									<td class="data bol-dtvencimento"><?php echo substr_replace( date_to_br( $bol->data_vencimento ), "", 10 ); ?></td>
+									<td class="data bol-cliente"><?php echo $bol->nome; ?></td>
+									<td class="data bol-servico"><?php echo $bol->descricao; ?></td>
+									<td class="data bol-statusbol">
 										<?php 
 											switch ( $bol->status_boleto ) {
 												case self::STATUS_BOLETO_EM_ABERTO:
@@ -833,7 +848,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 											}
 										?>
 									</td>
-									<td class="bol-statuspedido">
+									<td class="data bol-statuspedido">
 										<?php
 											switch ( $bol->status_pedido ) {
 												case self::STATUS_PEDIDO_NAO_INICIADO:
@@ -850,7 +865,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 											}
 										?>
 									</td>
-									<td class="bol-opcoes">
+									<td class="data bol-opcoes">
 										<select name="bol-single[<?php echo $bol->id; ?>]" class="bol-option">
 											<option value="selecione">Selecione</option>
 											<optgroup label="Mudar status do boleto:">
@@ -890,26 +905,26 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						
 					</form>
 					
-					<div class="modal hide fade in" id="excluirBoleto" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-					  <div class="modal-header">
-					    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-					    <h3 id="excluir-boleto-ModalLabel">Confirmar exclusão de boleto</h3>
-					  </div>
-					  <div class="modal-body">
-					    <p>Tem certeza que deseja prosseguir? Essa ação não pode ser revertida.</p>
-					  </div>
-					  <div class="modal-footer">
-					    <input type="submit" name="excluirBoleto" value="excluir" class="btn" />
-					    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Cancelar</button>
-					  </div>
-					</div>
-					
 			<?php
 					
 					break;
 			}
 			
 			?>
+			
+			<div class="modal hide fade in" id="excluir-boleto-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			  <div class="modal-header">
+			    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			    <h3 id="excluir-boleto-ModalLabel">Confirmar exclusão de boleto</h3>
+			  </div>
+			  <div class="modal-body">
+			    <p>Tem certeza que deseja prosseguir? Essa ação não pode ser revertida.</p>
+			  </div>
+			  <div class="modal-footer">
+			    <input type="submit" id="excluir-boleto" value="excluir" class="btn" />
+			    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Cancelar</button>
+			  </div>
+			</div>
 			
 			<script type="text/javascript">
 
@@ -923,12 +938,12 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 							if (pagina < 1 || pagina > <?php echo ceil( $res['totalBoletos'] / $limit ); ?>|| !intRegex.test(pagina) ) {
 								offset = <?php echo $offset; ?>
 							}
-							window.location = '<?php echo get_permalink() . "?modo=" . get_query_var('modo'); ?>&offset=' + offset + '&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>';
+							window.location.href = '<?php echo get_permalink() . "?modo=" . get_query_var('modo'); ?>&offset=' + offset + '&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>';
 						}
 					});
 					
 					jQuery("#boletos-por-pagina").change(function() {
-						window.location = '<?php echo get_permalink() . "?modo=" . get_query_var('modo'); ?>&offset=0&limit=' + jQuery(this).val() + '&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>';
+						window.location.href = '<?php echo get_permalink() . "?modo=" . get_query_var('modo'); ?>&offset=0&limit=' + jQuery(this).val() + '&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>';
 					});
 
 					jQuery(".cliente-opcao").change(function() {
@@ -936,7 +951,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						var cpf = option[1];
 						switch (option[0]) {
 							case "boletos":
-								window.location = '<?php echo get_permalink() . "?modo=todos&offset=0"; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>&cpf=' + cpf;
+								window.location.href = '<?php echo get_permalink() . "?modo=todos&offset=0"; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>&cpf=' + cpf;
 								break;
 							case "dados":
 								// @todo: gerar pop-up com dados do cliente e sumário de boletos/pedidos
@@ -951,7 +966,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						switch (option[0]) {
 							case "excluir":
 								// usar modal para confirmar exclusão do boleto
-								jQuery("#bol-single[id]").modal("show");
+								jQuery("#excluir-boleto-modal").modal("show");
 								break;
 							case "ver":
 								// chamar ver-boleto
@@ -991,12 +1006,17 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						}
 					});
 
-					jQuery.ajax({
-						url: "",
-						datatype: "html"	
-					}).done(function() {
-						jQuery()
-					});
+					// @todo estudando ajax/jquery
+					jQuery("#excluir-boleto").click(ajaxDoOption("excluir", "197824192"));
+
+					function ajaxDoOption(option, bolID) {
+						jQuery.ajax({
+							url: "<?php echo get_permalink(); ?>",
+							dataType: "html"	
+						}).done(function() {
+							jQuery(".modal-body").html(option + " " + bolID);
+						});
+					}
 					
 				});
 				

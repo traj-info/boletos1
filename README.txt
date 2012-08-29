@@ -1,4 +1,25 @@
-﻿v0.5
+﻿v0.6
+#descrição
+Desenvolvimento do painel de boletos
+
+#changelog
+Implementado "excluir" no menu "quick-change" com modal
+Implementado setas de ordenação no cabeçalho das tabelas
+Modificados os estilos das tabelas
+Modificado o dropdown de boletos/clientes por página: agora as opções variam de 5 em 5
+Corrigidos diversos conflitos de CSS com o tema
+Corrigido BUG: no modo "todos", visualizando resultados por cpf, ao tentar ordenar a tabela por qualquer seja o campo, perde-se a query var "cpf"
+
+#known issues
+BUG: css do cabeçalho da tabela quando ocupa 2 linhas a âncora fica menor que a célula
+
+#todo
+Implementar restante das opções modo "todos" (excluir, ver boleto, gerar segunda-via, enviar para cliente e ver pedido)
+Implementar pop-up "ver dados pessoais" modo "clientes"
+Limpar código após mudanças de lógica para uso de ajax com jquery
+
+=====================================================================================
+v0.5
 28/08/12 - Renato
 #descrição
 Desenvolvimento do painel de boletos
@@ -31,6 +52,7 @@ Iniciado e finalizado o desenvolvimento da interface do modo "clientes"
 
 
 #known issues
+BUG: no modo "todos", visualizando resultados por cpf, ao tentar ordenar a tabela por qualquer seja o campo, perde-se a query var "cpf"
 
 #todo
 Implementar restante das opções modo "todos" (excluir, ver boleto, gerar segunda-via, enviar para cliente e ver pedido)
