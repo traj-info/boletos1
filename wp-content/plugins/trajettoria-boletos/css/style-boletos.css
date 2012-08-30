@@ -105,10 +105,16 @@ div.pagination-custom ul li
 	padding: 0 !important;
 }
 
-.table-custom-padding tr.bol-thead th *
+.table-custom-padding tr.bol-thead th > *
 {
 	display: block;
-	padding: 9px 24px;
+	padding: 9px 18px;
+}
+
+.table-popup tr.bol-thead th > *
+{
+	display: block;
+	padding: 3px 6px;
 }
 
 .table-custom-padding tr td, .table-custom-padding tr th
@@ -124,6 +130,11 @@ td.data
 td.check
 {
 	vertical-align: middle;
+}
+
+td.bol-opcoes
+{
+	max-width: auto !important;
 }
 
 .center
@@ -188,3 +199,53 @@ th.sort-asc a
 	cursor: pointer;
 }
 
+td.bol-servico
+{
+	width: 100px;
+}
+
+th.col-opcoes
+{
+	width: 200px;
+}
+
+th.col-status-boleto, th.col-status-pedido
+{
+	width: 140px;
+}
+
+th.col-nome
+{
+	width: 200px;
+}
+
+th.col-status
+{
+	width: 35px;
+}
+
+th.col-data
+{
+	width: 85px;
+}
+
+th.col-servico
+{
+	width: 100px;
+}
+
+th.col-nossonumero
+{
+	width: 95px;
+}
+
+select.opcao
+{
+	width: 180px;
+}
+
+#generic-modal
+{
+	width: 700px;
+	margin: -250px 0 0 -330px;
+}

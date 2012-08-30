@@ -1,4 +1,22 @@
-﻿v0.6
+﻿v0.7
+#descrição
+Desenvolvimento dos pop-up's e aperfeiçoamento da interface do painel de boletos 
+
+#changelog
+Implementado ajax com jquery para gerar pop-up's "ver dados pessoais" e "ver pedidos"
+Criado esqueleto dos pop-up's
+Corrigido BUG: css do cabeçalho da tabela quando ocupa 2 linhas a âncora fica menor que a célula
+Corrigidos diversos conflitos de CSS com o tema
+
+#known issues
+lentidão para abrir pop-up's com jquery/ajax
+
+#todo
+Implementar restante das opções modo "todos" (ver boleto, gerar segunda-via, enviar para cliente)
+Limpar código após mudanças de lógica para uso de ajax com jquery
+
+=====================================================================================
+v0.6
 #descrição
 Desenvolvimento do painel de boletos
 

@@ -17,6 +17,7 @@ require_once('includes/class-options.php');
 require_once('includes/class-setup.php');
 require_once('includes/class-post_types.php');
 
+
 class TrajettoriaBoletos extends WP_Plugin_Setup {
 	
 	// constants
@@ -432,7 +433,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 					
 					?>
 					<form method="POST" enctype="multipart/form-data" action="" class="form-inline">
-						<table class="table table-striped table-custom-padding" id="bol-table" >
+						<table class="table table-striped table-custom-padding" id="clientes-table" >
 							<thead>
 								<tr class="bol-tpagination">
 									<th colspan="6" >
@@ -465,19 +466,19 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									<th class="col-head <?php if($order=="cpf" && $sort=="asc") echo "sort-asc"; elseif($order=="cpf" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
 										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "cpf"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">CPF</a>
 									</th>
-									<th class="col-head <?php if($order=="nome" && $sort=="asc") echo "sort-asc"; elseif($order=="nome" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+									<th class="col-head col-nome <?php if($order=="nome" && $sort=="asc") echo "sort-asc"; elseif($order=="nome" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
 										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "nome"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Nome</a>
 									</th>
 									<th class="col-head <?php if($order=="email" && $sort=="asc") echo "sort-asc"; elseif($order=="email" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
 										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "email"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">E-mail</a>
 									</th>
-									<th class="col-head <?php if($order=="status_boleto" && $sort=="asc") echo "sort-asc"; elseif($order=="status_boleto" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+									<th class="col-head col-status-boleto <?php if($order=="status_boleto" && $sort=="asc") echo "sort-asc"; elseif($order=="status_boleto" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
 										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_boleto"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Boleto em aberto?</a>
 									</th>
-									<th class="col-head <?php if($order=="status_pedido" && $sort=="asc") echo "sort-asc"; elseif($order=="status_pedido" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
+									<th class="col-head col-status-pedido <?php if($order=="status_pedido" && $sort=="asc") echo "sort-asc"; elseif($order=="status_pedido" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
 										<a href="?modo=clientes&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_pedido"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; ?>">Pedido em aberto?</a>
 									</th>
-									<th class="col-head">
+									<th class="col-head col-opcoes">
 										<span>Opções</span>
 									</th>
 								</tr>
@@ -511,7 +512,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 										?>
 									</td>
 									<td class="data cliente-opcoes">
-										<select name="cliente-opcao[<?php echo $c->cpf; ?>]" class="cliente-opcao">
+										<select name="cliente-opcao[<?php echo $c->cpf; ?>]" class="opcao cliente-opcao">
 											<option value="selecione">Selecione</option>
 											<option value="boletos_<?php echo $c->cpf; ?>">Ver boletos/pedidos</option>
 											<option value="dados_<?php echo $c->cpf; ?>">Ver dados pessoais</option>
@@ -571,7 +572,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						}
 					}
 					
-					// tratando ação bol-option
+					// tratando ação bol-opcao
 					if ( isset( $_POST['bol-single'] ) ) {
 						
 						foreach ( $_POST['bol-single'] as $bolID => $option ) {
@@ -751,7 +752,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 							  </div>
 							  <div class="modal-footer">
 							    <input type="submit" name="submit_quickchange" value="Excluir" class="btn" />
-							    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Cancelar</button>
+							    <button class="btn btn-primary close-modal" data-dismiss="modal" aria-hidden="true">Cancelar</button>
 							  </div>
 							</div>				
 						</form>
@@ -812,7 +813,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									<th class="col-head <?php if($order=="status_pedido" && $sort=="asc") echo "sort-asc"; elseif($order=="status_pedido" && $sort=="desc") echo "sort-desc"; else echo "sort"; ?>">
 										<a href="?modo=todos&offset=<?php echo $offset; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo "status_pedido"; ?>&sort=<?php if ($sort == "desc") echo "asc"; else echo "desc"; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>">Status do Pedido</a>
 									</th>
-									<th class="col-head bol-opcoes">
+									<th class="col-head col-opcoes">
 										<span>Opções</span>
 									</th>
 								</tr>
@@ -866,7 +867,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 										?>
 									</td>
 									<td class="data bol-opcoes">
-										<select name="bol-single[<?php echo $bol->id; ?>]" class="bol-option">
+										<select name="bol-single[<?php echo $bol->id; ?>]" class="opcao bol-opcao">
 											<option value="selecione">Selecione</option>
 											<optgroup label="Mudar status do boleto:">
 												<option value="pago_<?php echo $bol->id; ?>">Pago</option>
@@ -878,11 +879,11 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 												<option value="em-execucao_<?php echo $bol->id; ?>">Em execução</option>
 												<option value="finalizado_<?php echo $bol->id; ?>">Finalizado</option>
 											</optgroup>
-											<option value="excluir_<?php echo $bol->id; ?>">Excluir</option>
-											<option value="ver_<?php echo $bol->id; ?>">Ver</option>
-											<option value="segunda-via_<?php echo $bol->id; ?>">Gerar segunda via</option>
-											<option value="enviar_<?php echo $bol->id; ?>">Enviar para cliente</option>
+											<option value="ver_<?php echo $bol->id; ?>">Ver boleto</option>
 											<option value="pedido_<?php echo $bol->id; ?>">Ver pedido</option>
+											<option value="enviar_<?php echo $bol->id; ?>">Enviar para cliente</option>
+											<option value="segunda-via_<?php echo $bol->id; ?>">Gerar segunda via</option>
+											<option value="excluir_<?php echo $bol->id; ?>">Excluir</option>
 										</select>
 									</td>
 								</tr>
@@ -922,8 +923,12 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			  </div>
 			  <div class="modal-footer">
 			    <input type="submit" id="excluir-boleto" value="excluir" class="btn" />
-			    <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Cancelar</button>
+			    <button class="btn btn-primary close-modal" data-dismiss="modal" aria-hidden="true">Cancelar</button>
 			  </div>
+			</div>
+			
+			<div class="modal hide fade in" id="generic-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			  
 			</div>
 			
 			<script type="text/javascript">
@@ -955,12 +960,25 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								break;
 							case "dados":
 								// @todo: gerar pop-up com dados do cliente e sumário de boletos/pedidos
+								jQuery.ajax({
+									url: "<?php echo plugins_url("popups.php",__FILE__); ?>?popup=cliente&cpf=" + cpf,
+								 	dataType: "html"
+								}).done(function(data){
+									jQuery("#generic-modalLabel").html("Detalhes do cliente");
+									jQuery("#generic-modal").html(data);
+									jQuery("#generic-modal").modal("show");
+								});
+
 								break;
 						}
 						
 					});
+					
+					jQuery(".close-modal").click(function(){
+						jQuery(".opcao").val("Selecione");
+					});
 
-					jQuery(".bol-option").change(function() {
+					jQuery(".bol-opcao").change(function() {
 						var option = jQuery(this).val().split("_");
 						var id = option[1];
 						switch (option[0]) {
@@ -989,6 +1007,15 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								// abre um pop-up com os detalhes do pedido, 
 								// inclusive descrição digitada pelo cliente e 
 								// link para download do(s) arquivo(s) enviado(s)
+								jQuery.ajax({
+									url: "<?php echo plugins_url("popups.php",__FILE__); ?>?popup=pedido&bol-id=" + id,
+								 	dataType: "html"
+								}).done(function(data){
+									jQuery("#generic-modalLabel").html("Detalhes do pedido");
+									jQuery("#generic-modal > .modal-body").html(data);
+									jQuery("#generic-modal").modal("show");
+								});
+								
 								break;
 							default:
 								jQuery("#boletos").submit();
@@ -1014,7 +1041,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 							url: "<?php echo get_permalink(); ?>",
 							dataType: "html"	
 						}).done(function() {
-							jQuery(".modal-body").html(option + " " + bolID);
+							// jQuery(".modal-body").html(option + " " + bolID);
 						});
 					}
 					
