@@ -1,4 +1,21 @@
-﻿v0.7
+﻿#descrição
+Desenvolvimento dos pop-up's e aperfeiçoamento da interface do painel de boletos 
+
+#changelog
+Melhora na interface: agora é mostrado o total de boletos ou clientes também, por exemplo: "Mostrando boletos 1 a 5 de 35" 
+Implementada opção "enviar para cliente"
+Corrigido BUG: contagem de páginas no modo "clientes"
+
+#known issues
+lentidão para abrir pop-up's com jquery/ajax
+
+#todo
+Implementar restante das opções modo "todos" (ver boleto, gerar segunda-via)
+Popular pop-up's
+Limpar código após mudanças de lógica para uso de ajax com jquery
+
+=====================================================================================
+v0.7
 #descrição
 Desenvolvimento dos pop-up's e aperfeiçoamento da interface do painel de boletos 
 

@@ -399,11 +399,19 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			
 			echo $menu;
 			
-			// conta quantos boletos existem sempre que a página é carregada
+			/* conta quantos boletos existem sempre que a página é carregada 
+			 * 
+			 * se não estivermos filtrando por CPF, contamos o total geral de boletos
+			 * senão, contamos os boletos do cliente do CPF em questão
+			 * */
 			if( !get_query_var("cpf") )
-				$res = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE ) );
+				$totalBoletos = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM " . self::TRAJ_BOLETOS_TABLE ) );
 			else
-				$res = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf=" . get_query_var("cpf") ) );
+				$totalBoletos = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf=" . get_query_var("cpf") ) );
+			
+			/* conta quantos clientes existem sempre que a página é carregada 
+			 * */
+			$totalClientes = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(distinct cpf) FROM " . self::TRAJ_BOLETOS_TABLE ) );
 			
 			switch ( get_query_var('modo') ) {
 				
@@ -438,14 +446,14 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								<tr class="bol-tpagination">
 									<th colspan="6" >
 										<div class="row-fluid table-header">
-											<div class="span4 center text">Mostrando clientes <?php echo $offset+1; ?> a <?php echo sizeof($boletos) + $offset; ?></div>
+											<div class="span4 center text">Mostrando clientes <?php echo $offset+1; ?> a <?php echo sizeof($clientes) + $offset; ?> de <?php echo $totalClientes; ?></div>
 											<div class="span4 center pagination-custom">
 												<ul>
 													<li><a href="?modo=clientes&offset=0&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button"><<</button></a></li>
 													<li><a href="?modo=clientes&offset=<?php if ($offset-$limit-1 < 0) echo 0; else echo $offset-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button"><</button></a></li>
 													<li><input type="text" class="input-mini" id="ir-para-pagina" value="<?php echo floor($offset / $limit) + 1; ?>" /></li>
-													<li><a href="?modo=clientes&offset=<?php if ($offset+$limit+1 > $res['totalBoletos']) echo $offset; else echo $offset+$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button">></button></a></a></li>
-													<li><a href="?modo=clientes&offset=<?php if( $res['totalBoletos'] % $limit == 0 ) echo $res['totalBoletos'] - $limit; else echo $res['totalBoletos'] - $res['totalBoletos'] % $limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button">>></button></a></a></li>
+													<li><a href="?modo=clientes&offset=<?php if ($offset+$limit+1 > $totalClientes) echo $offset; else echo $offset+$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button">></button></a></a></li>
+													<li><a href="?modo=clientes&offset=<?php if( $totalClientes % $limit == 0 ) echo $totalClientes - $limit; else echo $totalClientes - $totalClientes % $limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; ?>"><button class="btn btn-small btn-primary" type="button">>></button></a></a></li>
 												</ul>
 											</div>
 											<div class="span4 center form-inline">
@@ -493,8 +501,8 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									<td class="data cliente-email"><?php echo $c->email; ?></td>
 									<td class="data cliente-statusbol">
 										<?php 
-											$result = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) AS totalBolAbertos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf = " . $c->cpf . " AND status_boleto = " . self::STATUS_BOLETO_EM_ABERTO ) );
-											if ( $result['totalBolAbertos'] > 0 ) {
+											$totalBolAbertos = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf = " . $c->cpf . " AND status_boleto = " . self::STATUS_BOLETO_EM_ABERTO ) );
+											if ( $totalBolAbertos > 0 ) {
 												echo "Sim";
 											} else {
 												echo "Não";
@@ -503,8 +511,8 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									</td>
 									<td class="data cliente-statuspedido">
 										<?php
-											$result = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) AS totalPedAbertos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf=" . $c->cpf . " AND ( status_pedido = " . self::STATUS_PEDIDO_EM_EXECUCAO . " OR status_pedido = " . self::STATUS_PEDIDO_NAO_INICIADO . " )" ) );
-											if ( $result['totalPedAbertos'] > 0 ) {
+											$totalPedAbertos = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE cpf=" . $c->cpf . " AND ( status_pedido = " . self::STATUS_PEDIDO_EM_EXECUCAO . " OR status_pedido = " . self::STATUS_PEDIDO_NAO_INICIADO . " )" ) );
+											if ( $totalPedAbertos > 0 ) {
 												echo "Sim";
 											} else {
 												echo "Não";
@@ -537,8 +545,8 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 						if ( preg_match( '/[^0-9]/', $_POST['nosso_numero'] ) == TRUE || $_POST['nosso_numero'] === "" ) {
 							$msg["quick_change"] = '<div class="alert alert-error fade in alert-custom-margin"><button type="button" class="close" data-dismiss="alert">×</button>Por favor, preencha corretamente o campo "nosso número". Ele deve conter apenas números.</div>';
 						} else {
-							$result = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) as totalBoletos FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE nosso_numero = {$_POST['nosso_numero']}" ) );
-							if ($result['totalBoletos'] > 0) {
+							$totalBoletos = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE nosso_numero = {$_POST['nosso_numero']}" ) );
+							if ($totalBoletos > 0) {
 								
 								switch ( $_POST['submit_quickchange'] ) {
 									case 'Marcar como pago':
@@ -672,6 +680,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 									$content = self::_helper_boleto_link( $bol->key_boleto );
 									self::_send_mail($bol->email, "Boleto", $content);
 								}
+								
 								break;
 							default:
 								break;
@@ -766,14 +775,14 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								<tr class="bol-tpagination">
 									<th colspan="9" >
 										<div class="row-fluid table-header">
-											<div class="span4 center text">Mostrando boletos <?php echo $offset+1; ?> a <?php echo sizeof($boletos) + $offset; ?></div>
+											<div class="span4 center text">Mostrando boletos <?php echo $offset+1; ?> a <?php echo sizeof($boletos) + $offset; ?> de <?php echo $totalBoletos; ?></div>
 											<div class="span4 center pagination-custom">
 												<ul>
 													<li><a href="?modo=todos&offset=0&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button"><<</button></a></li>
 													<li><a href="?modo=todos&offset=<?php if ($offset-$limit-1 < 0) echo 0; else echo $offset-$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button"><</button></a></li>
 													<li><input type="text" class="input-mini" id="ir-para-pagina" value="<?php echo floor($offset / $limit) + 1; ?>" /></li>
-													<li><a href="?modo=todos&offset=<?php if ($offset+$limit+1 > $res['totalBoletos']) echo $offset; else echo $offset+$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button">></button></a></li>
-													<li><a href="?modo=todos&offset=<?php if( $res['totalBoletos'] % $limit == 0 ) echo $res['totalBoletos'] - $limit; else echo $res['totalBoletos'] - $res['totalBoletos'] % $limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button">>></button></a></li>
+													<li><a href="?modo=todos&offset=<?php if ($offset+$limit+1 > $totalBoletos) echo $offset; else echo $offset+$limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button">></button></a></li>
+													<li><a href="?modo=todos&offset=<?php if( $totalBoletos % $limit == 0 ) echo $totalBoletos - $limit; else echo $totalBoletos - $totalBoletos % $limit; ?>&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>"><button class="btn btn-small btn-primary" type="button">>></button></a></li>
 												</ul>
 											</div>
 											<div class="span4 center form-inline">
@@ -940,7 +949,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 							var intRegex = /^\d+$/;
 							var pagina = jQuery(this).val();
 							var offset = <?php echo $limit; ?> * (pagina - 1);
-							if (pagina < 1 || pagina > <?php echo ceil( $res['totalBoletos'] / $limit ); ?>|| !intRegex.test(pagina) ) {
+							if (pagina < 1 || pagina > <?php echo ceil( $totalBoletos / $limit ); ?>|| !intRegex.test(pagina) ) {
 								offset = <?php echo $offset; ?>
 							}
 							window.location.href = '<?php echo get_permalink() . "?modo=" . get_query_var('modo'); ?>&offset=' + offset + '&limit=<?php echo $limit; ?>&order_by=<?php echo $order; ?>&sort=<?php echo $sort; if (get_query_var("cpf")) echo "&cpf=" . get_query_var("cpf"); ?>';
@@ -999,10 +1008,6 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								// valor, etc., 
 								// MAS aplicando uma nova data de vencimento a partir da data atual de emissão). 
 								break;
-							case "enviar":
-								// envia um e-mail ao cliente, 
-								// contendo um link para “ver-boleto” usando a key_boleto como query string.
-								break;
 							case "pedido":
 								// abre um pop-up com os detalhes do pedido, 
 								// inclusive descrição digitada pelo cliente e 
@@ -1034,16 +1039,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 					});
 
 					// @todo estudando ajax/jquery
-					jQuery("#excluir-boleto").click(ajaxDoOption("excluir", "197824192"));
-
-					function ajaxDoOption(option, bolID) {
-						jQuery.ajax({
-							url: "<?php echo get_permalink(); ?>",
-							dataType: "html"	
-						}).done(function() {
-							// jQuery(".modal-body").html(option + " " + bolID);
-						});
-					}
+					jQuery("#excluir-boleto").click();
 					
 				});
 				
