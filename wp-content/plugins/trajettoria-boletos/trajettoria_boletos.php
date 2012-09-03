@@ -937,7 +937,11 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			</div>
 			
 			<div class="modal hide fade in" id="generic-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-			  
+				<div class="modal-custom-container">
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-primary close-modal" data-dismiss="modal" aria-hidden="true">Fechar</button>
+				</div>
 			</div>
 			
 			<script type="text/javascript">
@@ -974,7 +978,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								 	dataType: "html"
 								}).done(function(data){
 									jQuery("#generic-modalLabel").html("Detalhes do cliente");
-									jQuery("#generic-modal").html(data);
+									jQuery("#generic-modal > .modal-custom-container").html(data);
 									jQuery("#generic-modal").modal("show");
 								});
 
@@ -1017,7 +1021,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								 	dataType: "html"
 								}).done(function(data){
 									jQuery("#generic-modalLabel").html("Detalhes do pedido");
-									jQuery("#generic-modal > .modal-body").html(data);
+									jQuery("#generic-modal").html(data);
 									jQuery("#generic-modal").modal("show");
 								});
 								
