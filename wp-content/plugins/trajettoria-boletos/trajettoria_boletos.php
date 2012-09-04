@@ -92,6 +92,8 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			wp_enqueue_script( 'jquery-masked-input-js' );
 			wp_register_script( 'jquery-validate-js', plugins_url( '/js/jquery.validate.js', __FILE__ ), array( 'jquery', 'jquery-form-js' ) );
 			wp_enqueue_script( 'jquery-validate-js' );
+			wp_register_script( 'common-js', plugins_url('/js/common.js', __FILE__ ), array( 'jquery' ) );
+			wp_enqueue_script( 'common-js' );
 			// TODO: use tinyMCE for textareas
 		
 			// query vars
@@ -936,13 +938,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			  </div>
 			</div>
 			
-			<div class="modal hide fade in" id="generic-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-				<div class="modal-custom-container">
-				</div>
-				<div class="modal-footer">
-					<button class="btn btn-primary close-modal" data-dismiss="modal" aria-hidden="true">Fechar</button>
-				</div>
-			</div>
+			<div class="modal hide fade in" id="generic-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true"></div>
 			
 			<script type="text/javascript">
 
@@ -978,17 +974,13 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 								 	dataType: "html"
 								}).done(function(data){
 									jQuery("#generic-modalLabel").html("Detalhes do cliente");
-									jQuery("#generic-modal > .modal-custom-container").html(data);
+									jQuery("#generic-modal").html(data);
 									jQuery("#generic-modal").modal("show");
 								});
 
 								break;
 						}
 						
-					});
-					
-					jQuery(".close-modal").click(function(){
-						jQuery(".opcao").val("Selecione");
 					});
 
 					jQuery(".bol-opcao").change(function() {
