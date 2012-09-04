@@ -77,7 +77,9 @@ class WP_Plugin_Options extends WP_Plugin_Base {
 		add_settings_field(
                 self::PREFIX . '_email_from_alias', 'Nome de exibição "De:"', array($this, 'email_from_aliasRenderer'), 'wp_plugin_page_options', self::ID
         );
-		
+		add_settings_field(
+                self::PREFIX . '_ultimo_nosso_numero', 'Último "Nosso Número" (NÃO atualize este valor a menos que compreenda seu significado!', array($this, 'ultimo_nosso_numeroRenderer'), 'wp_plugin_page_options', self::ID
+        );	
 		
         register_setting('wp_plugin_page_options', self::PREFIX . '_banco');
 		register_setting('wp_plugin_page_options', self::PREFIX . '_agencia');
@@ -102,6 +104,7 @@ class WP_Plugin_Options extends WP_Plugin_Base {
 		register_setting('wp_plugin_page_options', self::PREFIX . '_email_secure');
 		register_setting('wp_plugin_page_options', self::PREFIX . '_email_auth');
 		register_setting('wp_plugin_page_options', self::PREFIX . '_email_from_alias');
+		register_setting('wp_plugin_page_options', self::PREFIX . '_ultimo_nosso_numero');
 
     }
 	
@@ -266,6 +269,13 @@ class WP_Plugin_Options extends WP_Plugin_Base {
 		$html = "<input type='text' size='30' name='" . self::PREFIX . "_email_from_alias' id='" . self::PREFIX . "_email_from_alias' value='{$value}' />";
         echo $html;
     }   
+	
+	public function  ultimo_nosso_numeroRenderer($args) {
+        $value = get_option(self::PREFIX . '_ultimo_nosso_numero');
+		
+		$html = "<input type='text' size='30' name='" . self::PREFIX . "_ultimo_nosso_numero' id='" . self::PREFIX . "_email_from_alias' value='{$value}' />";
+        echo $html;
+    }  
 	
     public function layout() {
 		echo "<h4>&copy; Trajettoria TI Ltda.</h4>";

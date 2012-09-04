@@ -150,11 +150,19 @@ function NowDatetime()
 # FUNCTION: date_to_br
 # DESCRIPTION: converte uma data/hora em formato MySQL para o formato dd/mm/yyyy H:m:s
 
-function date_to_br($mysql_datetime) 
+function date_to_br($mysql_datetime, $onlyDate=FALSE) 
 {
 	$dateTime = explode( ' ', $mysql_datetime );
 	$dateTime[0] = explode( '-', $dateTime[0] );
-	$dateTime = $dateTime[0][2].'/'.$dateTime[0][1].'/'.$dateTime[0][0].' '.$dateTime[1];
+	if($onlyDate)
+	{
+		$dateTime = $dateTime[0][2].'/'.$dateTime[0][1].'/'.$dateTime[0][0];
+	}
+	else
+	{
+		$dateTime = $dateTime[0][2].'/'.$dateTime[0][1].'/'.$dateTime[0][0].' '.$dateTime[1];
+	}
+	
 
 	return $dateTime;
 }

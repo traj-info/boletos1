@@ -31,6 +31,9 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 	const STATUS_PEDIDO_FINALIZADO = 2;
 
 	const TRAJ_BOLETOS_TABLE = 'traj_boletos';
+	const TRAJ_MAX_UPLOAD_SIZE = 20971520; // 20 MB
+	
+	const TRAJ_DS = '.'; // decimal separator
 
 	
 	###############################################################################################################
@@ -111,6 +114,8 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 	# DESCRIPTION: redireciona para o template de "Serviços" e "Ver-Boleto"
 	public function template_redirect()
 	{
+		global $wpdb;
+		
         $page = get_query_var('trajettoria_page');
         if( $page === 'servicos' )
 		{
@@ -122,7 +127,54 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			$key = get_query_var('key');
 			$nosso_numero = get_query_var('nosso_numero');
 			$cpf = get_query_var('cpf');
-			require_once("get_boleto.php?key=$key&nosso_numero=$nosso_numero&cpf=$cpf");
+			
+			// aceita somente KEY OU (NOSSO NUMERO + CPF)
+			if(!empty($key) && (!empty($nosso_numero) && !empty($cpf)))
+			{
+				exit('Acesso negado.');
+			}
+			
+			// fornecida KEY
+			if(!empty($key))
+			{
+				if(strlen($key) != 36) exit('KEY incorreta');
+				
+				$b = $wpdb->get_row( $wpdb->prepare("SELECT * FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE key_boleto='$key' LIMIT 1"), ARRAY_A );
+				
+			}
+			else	// fornecidos nosso número e CPF
+			{
+				$b = $wpdb->get_row( $wpdb->prepare("SELECT * FROM " . self::TRAJ_BOLETOS_TABLE . " WHERE nosso_numero='$nosso_numero' AND cpf='$cpf' LIMIT 1"), ARRAY_A );
+			}		
+			
+			if(!$b) exit('Boleto não localizado.');
+			
+			$nosso_numero = $b['nosso_numero'];
+			$taxa_boleto = $b['taxa_boleto'];
+			$data_venc = date_to_br($b['data_vencimento'], TRUE);
+			$valor_cobrado = $b['valor'];
+			$data_emissao = date_to_br($b['data_criacao'], TRUE);
+			$sacado = $b['nome'] . " (CPF: " . $b['cpf'] . ")";
+			$end1 = $b['endereco'];
+			$end2 = $b['cidade'] . "/" . strtoupper($b['uf']) . " - CEP: " . $b['cep'];
+			$demonstrativo1 = get_bloginfo('name') . " - PEDIDO #" . $b['nosso_numero'];
+			$demonstrativo2 = "Valor cobrado: R$ " . number_format($b['valor'],2,",","") . " + taxa do boleto R$ " . number_format($b['taxa_boleto'],2,",","");
+			$demonstrativo3 = "Data do pedido: " . date_to_br($b['data_criacao']);
+			$instrucoes1 = " - Sr. Caixa, NÃO receber após o vencimento.";
+			$instrucoes2 = " - Sr. Cliente, entrar em contato com " . get_bloginfo('name');
+			$instrucoes3 = " para segunda via após o vencimento.";
+			$instrucoes4 = "";
+			
+			$codigo_cliente = self::_get_setting('cc');
+			$agencia = self::_get_setting('agencia');
+			$carteira = self::_get_setting('carteira');
+			$cedente_nome = self::_get_setting('cedente_nome');
+			$cedente_cnpj = self::_get_setting('cedente_cnpj');
+			$cedente_endereco1 = self::_get_setting('cedente_endereco1');
+			$cedente_endereco2 = self::_get_setting('cedente_endereco2');
+			$cedente_logotipo = self::_get_setting('cedente_logotipo');
+				
+			require_once('get_boleto.php');
             exit();
 		}
     }
@@ -134,15 +186,38 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 	public static function pagina_pedido()
 	{
 		$prod_id = get_query_var('prod_id');
-
+		$step = $_POST['hidden_step'];
 		
+		if(!isset($_POST['submit'])) $step = "1";
+		
+		switch($step)
+		{
+			case "1":
+				$class_1 = "active";
+				$class_2 = "";
+				$class_3 = "";
+				break;
+			case "2":
+				$class_1 = "";
+				$class_2 = "active";
+				$class_3 = "";
+				break;
+			case "3":
+				$class_1 = "";
+				$class_2 = "";
+				$class_3 = "active";
+				break;
+			default:
+				$prod_id = '';
+				break;
+		}
 
 		?>
 		<div class="alignright">
-			<ul class="nav nav-pills">
-			  <li class="active"><a>ETAPA 1: Cadastro</a></li>
-			  <li><a>ETAPA 2: Revisão</a></li>
-			  <li><a>ETAPA 3: Boleto</a></li>
+			<ul class="nav nav-pills novo-pedido-seletor">
+			  <li class="<?php echo $class_1; ?>">ETAPA 1: Cadastro</li>
+			  <li class="<?php echo $class_2; ?>">ETAPA 2: Revisão</li>
+			  <li class="<?php echo $class_3; ?>">ETAPA 3: Boleto</li>
 			</ul>
 		</div>
 		<div class="clear"></div>
@@ -162,208 +237,574 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			
 			echo "<form enctype='multipart/form-data' method='post' action='' name='frmPedido' id='frmPedido' class='form-horizontal'>";
 			echo "<input type='hidden' name='hidden_prod_id' id='hidden_prod_id' value='" . $prod_id . "' />";
-			echo "<input type='hidden' name='hidden_step' id='hidden_step' value='2' />";
+			echo "<input type='hidden' name='data_vencimento' id='data_vencimento' value='" . $s['data_vencimento'] . "' />";
+			echo "<input type='hidden' name='taxa' id='taxa' value='" . $s['taxa'] . "' />";
+			echo "<input type='hidden' name='valor' id='valor' value='" . $s['valor'] . "' />";
 			
-			echo "<fieldset>";
 			
-			?>
+			switch($step)
+			{
+				case "1": // cadastro
+					self::_pagina_painel_boletos_step1($s);
+					break;
+					
+				case "2": // revisão
+					self::_pagina_painel_boletos_step2($s);
+					break;
+				
+				case "3": // boleto
+					self::_pagina_painel_boletos_step3($s);
+					break;
+			}
+		}
+	}
 	
-			<div class="control-group">
-			<label class="control-label" for="nome">Nome:</label>
-			<div class="controls">
-				<input type="text" class="input-xlarge" id="nome" name="nome">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="cpf">CPF:</label>
-			<div class="controls">
-				<input type="text" class="input-medium" id="cpf" name="cpf">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="instituicao">Instituição:</label>
-			<div class="controls">
-				<input type="text" class="input-xlarge" id="instituicao" name="instituicao">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="email">E-mail:</label>
-			<div class="controls">
-				<input type="text" class="input-xlarge" id="email" name="email">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="telefone">Telefone:</label>
-			<div class="controls">
-				<input type="text" class="input-medium" id="telefone" name="telefone">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="celular">Celular:</label>
-			<div class="controls">
-				<input type="text" class="input-medium" id="celular" name="celular">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="endereco">Endereço:</label>
-			<div class="controls">
-				<textarea name="endereco" id="endereco" class="input-xlarge" rows="3" cols="150"></textarea>
-				<p class="help-block">Exemplo: Av. Paulista, 2200 - cj. 161</p>
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="cep">CEP:</label>
-			<div class="controls">
-				<input type="text" class="input-small" id="cep" name="cep">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="cidade">Cidade:</label>
-			<div class="controls">
-				<input type="text" class="input-medium" id="cidade" name="cidade">
-			</div>
-			</div>
-			
-			<div class="control-group">
-			<label class="control-label" for="uf">UF:</label>
-			<div class="controls">
-				<select name="uf" id="uf" class="input-medium">
-				<option value>Selecione...</option>
-				<option value="ac">Acre</option>
-				<option value="al">Alagoas</option>
-				<option value="am">Amazonas</option>
-				<option value="ap">Amapá</option>
-				<option value="ba">Bahia</option>
-				<option value="ce">Ceará</option>
-				<option value="df">Distrito Federal</option>
-				<option value="es">Espírito Santo</option>
-				<option value="go">Goiás</option>
-				<option value="ma">Maranhão</option>
-				<option value="mt">Mato Grosso</option>
-				<option value="ms">Mato Grosso do Sul</option>
-				<option value="mg">Minas Gerais</option>
-				<option value="pa">Pará</option>
-				<option value="pb">Paraíba</option>
-				<option value="pr">Paraná</option>
-				<option value="pe">Pernambuco</option>
-				<option value="pi">Piauí</option>
-				<option value="rj">Rio de Janeiro</option>
-				<option value="rn">Rio Grande do Norte</option>
-				<option value="ro">Rondônia</option>
-				<option value="rs">Rio Grande do Sul</option>
-				<option value="rr">Roraima</option>
-				<option value="sc">Santa Catarina</option>
-				<option value="se">Sergipe</option>
-				<option value="sp">São Paulo</option>
-				<option value="to">Tocantins</option>
-				</select>
-			</div>
-			</div>
-			
-			
-			<div class="control-group">
-			<label class="control-label" for="descricao"><?php echo $s['label_descricao']; ?>:</label>
-			<div class="controls">
-				<textarea name="descricao" id="descricao" class="input-xxlarge" rows="5" cols="150"></textarea>
-			</div>
-			</div>
-			
-			<?php if ($s['permitir_upload']) : ?>
-			
-			<div class="control-group">
-			<label class="control-label" for="arquivos[]">Envio de arquivos:</label>
-			<div class="controls">
-				<p class="help-block">Selecione o(s) arquivo(s) necessário(s) para a análise estatística.<br/>
-				Você pode selecionar até 5 arquivos.<br/>
-				Nós recomendamos agrupá-los num único arquivo compactado.<br/>
-				São aceitos os formatos: <strong><?php echo $s['formatos_arquivo']; ?></strong>.</p>
-				<div id="arquivos-holder">
-					<div class='linha-arquivo'>
-						<input class="input-file" id="arquivos[]" name="arquivos[]" type="file"><button class='btn btn-danger remover-arquivo' onclick="return false;"><i class="icon-trash icon-white"></i> remover</button>
-					</div>
-				</div>
-			<button class='btn btn-success' id='novo-arquivo' onclick='return false;'><i class="icon-plus icon-white"></i> adicionar outro arquivo...</button>					
-			</div>
-			</div>
-			
+	###############################################################################################################
+
+	# FUNCTION: _pagina_painel_boletos_step1
+	# DESCRIPTION: renderiza a página Painel de Boletos, step 1 (cadastro)
+	# recebe um array "$s" com as informações sobre o serviço solicitado
+	private static function _pagina_painel_boletos_step1($s)
+	{
+		if(isset($_POST['old_data']))
+		{
+			$d = unserialize(urldecode($_POST['old_data']));
+			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function(){
+				jQuery('#uf').val('<?php echo $d['uf']; ?>');
+			});
+			</script>
 			
-				// File upload inputs
-				jQuery('#novo-arquivo').click(function(){
-					cont_arq = jQuery('.linha-arquivo').length;
-					cont_arq++;
-					if(cont_arq < 6) {
-						jQuery("<div class='linha-arquivo'><input class='input-file' id='arquivos[]' name='arquivos[]' type='file'><button class='btn btn-danger remover-arquivo' onclick='return false;'><i class='icon-trash icon-white'></i> remover</button></div>").appendTo(jQuery('#arquivos-holder'));
+			<?php
+		}
+		else
+		{
+			$d = NULL;
+		}
+	?>
+		<input type='hidden' name='hidden_step' id='hidden_step' value='2' />
+		<input type='hidden' name='formatos_arquivo' id='formatos_arquivo' value='<?php echo $s['formatos_arquivo']; ?>' />
+		<fieldset>
+
+		<div class="control-group">
+		<label class="control-label" for="nome">Nome:</label>
+		<div class="controls">
+			<input type="text" class="input-xlarge required" minlength="5" id="nome" name="nome" value="<?php echo $d['nome']; ?>">
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="cpf">CPF:</label>
+		<div class="controls">
+			<input type="text" class="input-medium required" id="cpf" name="cpf" value="<?php echo $d['cpf']; ?>">
+			<label for="cpf" class="error" id="val-cpf"></label>
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="instituicao">Instituição:</label>
+		<div class="controls">
+			<input type="text" class="input-xlarge required" id="instituicao" name="instituicao" value="<?php echo $d['instituicao']; ?>">
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="email">E-mail:</label>
+		<div class="controls">
+			<input type="text" class="input-xlarge required email" id="email" name="email" value="<?php echo $d['email']; ?>">
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="telefone">Telefone:</label>
+		<div class="controls">
+			<input type="text" class="input-medium required" id="telefone" name="telefone" value="<?php echo $d['telefone']; ?>">
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="celular">Celular:</label>
+		<div class="controls">
+			<input type="text" class="input-medium required" id="celular" name="celular" value="<?php echo $d['celular']; ?>">
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="endereco">Endereço:</label>
+		<div class="controls">
+			<textarea name="endereco" id="endereco" minlength="10" class="input-xlarge required" rows="3" cols="150"><?php echo $d['endereco']; ?></textarea>
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="cep">CEP:</label>
+		<div class="controls">
+			<input type="text" class="input-small required" id="cep" name="cep" value="<?php echo $d['cep']; ?>">
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="cidade">Cidade:</label>
+		<div class="controls">
+			<input type="text" class="input-medium required" id="cidade" name="cidade" value="<?php echo $d['cidade']; ?>">
+		</div>
+		</div>
+		
+		<div class="control-group">
+		<label class="control-label" for="uf">UF:</label>
+		<div class="controls">
+			<select name="uf" id="uf" class="input-medium required">
+			<option value>Selecione...</option>
+			<option value="ac">Acre</option>
+			<option value="al">Alagoas</option>
+			<option value="am">Amazonas</option>
+			<option value="ap">Amapá</option>
+			<option value="ba">Bahia</option>
+			<option value="ce">Ceará</option>
+			<option value="df">Distrito Federal</option>
+			<option value="es">Espírito Santo</option>
+			<option value="go">Goiás</option>
+			<option value="ma">Maranhão</option>
+			<option value="mt">Mato Grosso</option>
+			<option value="ms">Mato Grosso do Sul</option>
+			<option value="mg">Minas Gerais</option>
+			<option value="pa">Pará</option>
+			<option value="pb">Paraíba</option>
+			<option value="pr">Paraná</option>
+			<option value="pe">Pernambuco</option>
+			<option value="pi">Piauí</option>
+			<option value="rj">Rio de Janeiro</option>
+			<option value="rn">Rio Grande do Norte</option>
+			<option value="ro">Rondônia</option>
+			<option value="rs">Rio Grande do Sul</option>
+			<option value="rr">Roraima</option>
+			<option value="sc">Santa Catarina</option>
+			<option value="se">Sergipe</option>
+			<option value="sp">São Paulo</option>
+			<option value="to">Tocantins</option>
+			</select>
+		</div>
+		</div>
+		
+		
+		<div class="control-group">
+		<label class="control-label" for="descricao"><?php echo $s['label_descricao']; ?>:</label>
+		<div class="controls">
+			<textarea name="descricao" id="descricao" class="input-xxlarge required" rows="5" cols="150"><?php echo $d['descricao']; ?></textarea>
+		</div>
+		</div>
+		
+		<?php if ($s['permitir_upload']) : ?>
+		
+		<div class="control-group">
+		<label class="control-label" for="arquivos[]">Envio de arquivos:</label>
+		<div class="controls">
+			<p class="help-block">Selecione o(s) arquivo(s) necessário(s) para a análise estatística.<br/>
+			Você pode selecionar até 5 arquivos.<br/>
+			Nós recomendamos agrupá-los num único arquivo compactado.<br/>
+			São aceitos os formatos: <strong><?php echo $s['formatos_arquivo']; ?></strong>.</p>
+			<div id="arquivos-holder">
+				<div class='linha-arquivo'>
+					<input class="input-file" id="arquivos[]" name="arquivos[]" type="file"><button class='btn btn-danger remover-arquivo' onclick="return false;"><i class="icon-trash icon-white"></i> remover</button>
+				</div>
+			</div>
+		<br />
+		<button class='btn btn-success' id='novo-arquivo' onclick='return false;'><i class="icon-plus icon-white"></i> adicionar outro arquivo...</button>					
+		</div>
+		</div>
+		
+		<script type="text/javascript">
+		jQuery(document).ready(function(){
+		
+			// File upload inputs
+			jQuery('#novo-arquivo').click(function(){
+				cont_arq = jQuery('.linha-arquivo').length;
+				cont_arq++;
+				if(cont_arq < 6) {
+					jQuery("<div class='linha-arquivo'><input class='input-file' id='arquivos[]' name='arquivos[]' type='file'><button class='btn btn-danger remover-arquivo' onclick='return false;'><i class='icon-trash icon-white'></i> remover</button></div>").appendTo(jQuery('#arquivos-holder'));
+
+					// Remove file
+					jQuery('.remover-arquivo').click(function(){
+						jQuery(this).parent('.linha-arquivo').remove();
+						cont_arq = jQuery('.linha-arquivo').length;
+						if(cont_arq < 6)
+						{
+							jQuery('#novo-arquivo').show();
+						}
+					});
+					
+					// File types validation
+					jQuery('.input-file').change(function(){
+						var extension = getExtension(jQuery(this).val());
+						var allowed = '<?php echo $s['formatos_arquivo']; ?>';
+						var allowed_array = allowed.split(",");
 						
-						jQuery('.remover-arquivo').click(function(){
+						if(jQuery.inArray(extension, allowed_array) == -1) // ext not allowed
+						{
 							jQuery(this).parent('.linha-arquivo').remove();
 							cont_arq = jQuery('.linha-arquivo').length;
 							if(cont_arq < 6)
 							{
 								jQuery('#novo-arquivo').show();
 							}
-						});
-						
-						if(cont_arq == 5) jQuery('#novo-arquivo').hide();
+						}
+					});
+			
+					
+					if(cont_arq == 5) jQuery('#novo-arquivo').hide();
+				}
+			});
+			jQuery('.remover-arquivo').click(function(){
+				jQuery(this).parent('.linha-arquivo').remove();
+				cont_arq = jQuery('.linha-arquivo').length;
+				if(cont_arq < 6)
+				{
+					jQuery('#novo-arquivo').show();
+				}
+			});
+			
+			// Validate
+			jQuery('#frmPedido').validate({
+				messages: {
+					nome: 'Digite seu nome',
+					email: {
+						required: 'Digite seu e-mail',
+						email: 'Digite um e-mail válido'
+					},
+					cpf: 'Digite seu CPF no formato 99.999.999-9',
+					instituicao: 'Digite o nome da instituição à qual esteja vinculado',
+					telefone: 'Digite seu telefone',
+					celular: 'Digite seu celular',
+					endereco: 'Digite seu endereço completo, incluindo complementos',
+					cep: 'Digite seu CEP no formato 99999-999',
+					cidade: 'Digite o nome de sua cidade',
+					uf: 'Selecione seu Estado',
+					descricao: 'Digite a descrição dos serviços solicitados'
+				}
+			});
+
+			// CPF validation
+			jQuery('#cpf').blur(function(){
+				var cpf = jQuery(this).val();
+				
+				jQuery.ajax({
+					url: "<?php echo plugins_url("check_cpf.php",__FILE__); ?>?cpf=" + cpf,
+					dataType: "html"
+				}).done(function(data){
+					if(data == 'ok')
+					{
+						jQuery("#val-cpf").hide();
+					}
+					else
+					{
+						jQuery("#cpf").val('');
+						jQuery("#val-cpf").html('Digite um CPF válido.');
+						jQuery("#val-cpf").show();
 					}
 				});
-				jQuery('.remover-arquivo').click(function(){
+			});
+			
+			// File types validation
+			jQuery('.input-file').change(function(){
+			
+				var extension = getExtension(jQuery(this).val());
+				var allowed = '<?php echo $s['formatos_arquivo']; ?>';
+				var allowed_array = allowed.split(",");
+				
+				if(jQuery.inArray(extension, allowed_array) == -1) // ext not allowed
+				{
 					jQuery(this).parent('.linha-arquivo').remove();
 					cont_arq = jQuery('.linha-arquivo').length;
 					if(cont_arq < 6)
 					{
 						jQuery('#novo-arquivo').show();
 					}
-				});
-				
-				// Validate
-				jQuery('#frmPedido').validate({
-					rules: {
-						
-					},
-					messages: {
-					
-					}
-				});
-
-				// Input masks
-				jQuery('#cpf').mask('999.999.999-99');
-				jQuery('#telefone').mask('(99) 99999999? ********************');
-				jQuery('#celular').mask('(99) 99999999?9');
-				jQuery('#cep').mask('99999-999');
-				
+				}
 			});
 			
-			function redireciona(url)
-			{
-				window.location.href = url;
-			}
+			// Input masks
+			jQuery('#cpf').mask('999.999.999-99');
+			jQuery('#telefone').mask('(99) 99999999? ********************');
+			jQuery('#celular').mask('(99) 99999999?9');
+			jQuery('#cep').mask('99999-999');
 			
-			</script>
+			// Popover endereço
+			jQuery('#endereco').popover({
+				trigger: "focus",
+				title: "Exemplo:",
+				content: "<h4>Av. Paulista, 2200 - cj. 161</h4>"
+			})
 			
-			<?php endif; ?>
-			
-			<?php
-			echo "<div class='form-actions'>";
-			echo "<button type='submit' name='submit' id='submit' class='btn btn-primary'>Próximo >></button>";
-			echo "<a name='cancel' id='cancel' class='small-link' href='" .  get_site_url() . "'>Cancelar</a>";
-			echo "</div>";
-			echo "</fieldset>";
-			echo "</form>";
-			
+		
+		});
+		
+		function redireciona(url)
+		{
+			window.location.href = url;
 		}
-			
+		
+		function getExtension(filename)
+		{
+			return filename.split('.').pop().toLowerCase();
+		}
+		
+		</script>
+		
+		<?php endif; ?>
+		
+		<?php
+		echo "<div class='form-actions'>";
+		echo "<button type='submit' name='submit' id='submit' class='btn btn-primary'>Próximo >></button>";
+		echo "<a name='cancel' id='cancel' class='small-link' href='" .  get_site_url() . "'>Cancelar</a>";
+		echo "</div>";
+		echo "</fieldset>";
+		echo "</form>";
+	}	
+	
+	###############################################################################################################
 
-	}
+	# FUNCTION: _pagina_painel_boletos_step2
+	# DESCRIPTION: renderiza a página Painel de Boletos, step 2 (revisão dos dados)
+	# recebe um array "$s" com as informações sobre o serviço solicitado
+	private static function _pagina_painel_boletos_step2($s)
+	{
+		// save posted form data in case user wants to go back to fix some data previously entered.
+		$old_data = urlencode(serialize($_POST));
+		
+		// processar uploads
+		$arquivos = self::_process_uploads(explode(",", $s['formatos_arquivo']), self::TRAJ_MAX_UPLOAD_SIZE);
+		$arquivos = is_array($arquivos) ? implode(",", $arquivos) : '';
+		
+		?>
+		<script type="text/javascript">
+		jQuery(document).ready(function(){
+			jQuery('#submit_previous').click(function(){
+				jQuery('#hidden_step').val('1');
+			});
+		});
+		</script>
+		
+		<input type='hidden' name='hidden_step' id='hidden_step' value='3' />
+		<input type='hidden' name='old_data' id='old_data' value='<?php echo $old_data; ?>' />
+		<input type='hidden' name='arquivos' id='arquivos' value='<?php echo $arquivos; ?>' />
+		
+		<fieldset>
+		
+		<p><strong>Revise as informações abaixo antes de concluir seu pedido.</strong></p>
+		<p>Se quiser efetuar alguma correção, clique em "<< Anterior".</p>
+		
+		<div class="rev-holder">
+			<div class="rev-label">Nome:</div>
+			<div class="rev-data"><?php echo $_POST['nome']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">CPF:</div>
+			<div class="rev-data"><?php echo $_POST['cpf']; ?></div>
+		</div>
+		<div class="clear"></div>		
+		
+		<div class="rev-holder">
+			<div class="rev-label">Instituição:</div>
+			<div class="rev-data"><?php echo $_POST['instituicao']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">E-mail:</div>
+			<div class="rev-data"><?php echo $_POST['email']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">Telefone:</div>
+			<div class="rev-data"><?php echo $_POST['telefone']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">Celular:</div>
+			<div class="rev-data"><?php echo $_POST['celular']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">Endereço:</div>
+			<div class="rev-data"><?php echo $_POST['endereco']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">CEP:</div>
+			<div class="rev-data"><?php echo $_POST['cep']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">Cidade:</div>
+			<div class="rev-data"><?php echo $_POST['cidade']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">UF:</div>
+			<div class="rev-data"><?php echo $_POST['uf']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">Descrição:</div>
+			<div class="rev-data"><?php echo $_POST['descricao']; ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<div class="rev-holder">
+			<div class="rev-label">Arquivo(s):</div>
+			<div class="rev-data"><?php echo self::_list_files(); ?></div>
+		</div>
+		<div class="clear"></div>
+		
+		<?php
+		echo "<div class='form-actions'>";
+		echo "<button type='submit' name='submit' id='submit_previous' class='btn'><< Anterior</button>&nbsp;&nbsp;";
+		echo "<button type='submit' name='submit' id='submit' class='btn btn-primary'>Próximo >></button>";
+		echo "<a name='cancel' id='cancel' class='small-link' href='" .  get_site_url() . "'>Cancelar</a>";
+		echo "</div>";
+		echo "</fieldset>";
+		echo "</form>";		
+	}	
+	
+	###############################################################################################################
+
+	# FUNCTION: _pagina_painel_boletos_step3
+	# DESCRIPTION: renderiza a página Painel de Boletos, step 3 (boleto)
+	# recebe um array "$s" com as informações sobre o serviço solicitado
+	private static function _pagina_painel_boletos_step3($s)
+	{
+		global $wpdb;
+	
+		// obter valores postados
+		$p = unserialize(urldecode($_POST['old_data']));
+		$arquivos = $_POST['arquivos'];
+		
+		// obter valores calculados
+		$key_boleto = create_guid();
+		$ip = get_ip();
+		$agora = NowDatetime();
+		
+		// obter nosso número
+		$old_nn = self::_get_setting('ultimo_nosso_numero');
+		if(!is_numeric($old_nn)) $old_nn = 0;
+		$nosso_numero = (int)$old_nn + 1;
+		update_option(WP_Plugin_Options::PREFIX . '_ultimo_nosso_numero', $nosso_numero);
+
+		// preparar dados para BD
+		$p['valor'] = str_replace(",", self::TRAJ_DS, $p['valor']);
+		$p['taxa'] = str_replace(",", self::TRAJ_DS, $p['taxa']);
+		
+		// salvar registro no BD
+		$dados = array(
+			'post_id'		=> $p['hidden_prod_id'],
+			'nome'			=> $p['nome'],
+			'email'			=> $p['email'],
+			'telefone'		=> $p['telefone'],
+			'celular'		=> $p['celular'],
+			'cpf'			=> $p['cpf'],
+			'endereco'		=> $p['endereco'],
+			'cep'			=> $p['cep'],
+			'instituicao'	=> $p['instituicao'],
+			'ip'			=> $ip,
+			'cidade'		=> $p['cidade'],
+			'uf'			=> $p['uf'],
+			'arquivos'		=> $arquivos,
+			'descricao'		=> $p['descricao'],
+			'data_criacao'	=> $agora,
+			'data_vencimento' => $p['data_vencimento'],
+			'valor'			=> $p['valor'],
+			'taxa_boleto'	=> $p['taxa'],
+			'status_boleto'	=> self::STATUS_BOLETO_EM_ABERTO,
+			'status_pedido'	=> self::STATUS_PEDIDO_NAO_INICIADO,
+			'nosso_numero'	=> $nosso_numero,
+			'key_boleto'	=> $key_boleto,
+			'obs'			=> ''
+		);
+		
+		if(! $wpdb->insert(self::TRAJ_BOLETOS_TABLE, $dados))
+		{
+			echo "Erro ao finalizar pedido. Tente novamente.";
+		}
+		
+		// envio de e-mail para cliente
+		$t = "<p><strong>" . get_bloginfo('name') . "</strong></p>";
+		$t .= "<p><strong>Confirmação do pedido número $nosso_numero</strong></p>";
+		$t .= "<hr>";
+		$t .= "<p>Olá, " . $p['nome'] . "!<br />";
+		$t .= "Recebemos seu pedido com sucesso! Guarde este e-mail pois ele contém informações importantes.</p>";
+		$t .= "<p>Data do pedido: <strong>" . date_to_br($agora) . "</strong><br />";
+		$t .= "Serviço: <strong>" . $s['title'] . "</strong><br />";
+		$t .= "Valor: <strong> R$ " . number_format($p['valor'], 2, ",", "") . "</strong><br />";
+		$t .= "Taxa do boleto: <strong> R$ " . number_format($p['taxa'], 2, ",", "") . "</strong><br />";
+		$t .= "Data de vencimento do boleto: <strong>" . date_to_br($p['data_vencimento']) . "</strong><br />";
+		$t .= "Seu CPF: <strong>" . $p['cpf'] . "</strong></p>";
+		$t .= "<hr>";
+		$t .= "<p><strong>Para imprimir seu boleto, copie-e-cole o seguinte endereço em seu navegador, ou clique no link:</strong><br/>";
+		$t .= "<a href='" . get_site_url() . "/ver-boleto/?key=" . $key_boleto . "'>" . get_site_url() . "/ver-boleto/?key=" . $key_boleto . "</a></p>";
+		$t .= "<br/><p>Atenciosamente,<br/>";
+		$t .= "Equipe " . get_bloginfo('name') . "<br/>";
+		$t .= "<a href='" . get_site_url() . "'>" . get_site_url() . "</a></p>";
+		$subject = "Confirmação do pedido " . $nosso_numero;
+		self::_send_mail($p['email'], $subject, $t);
+		
+		// envio de e-mail para admin
+		$t = "<p><strong>" . get_bloginfo('name') . "</strong></p>";
+		$t .= "<p><strong>Novo pedido número $nosso_numero</strong></p>";
+		$t .= "<hr>";
+		$t .= "<p>Data do pedido: <strong>" . date_to_br($agora) . "</strong><br />";
+		$t .= "Serviço: <strong>" . $s['title'] . "</strong><br />";
+		$t .= "Valor: <strong> R$ " . number_format($p['valor'], 2, ",", "") . "</strong><br />";
+		$t .= "Taxa do boleto: <strong> R$ " . number_format($p['taxa'], 2, ",", "") . "</strong><br />";
+		$t .= "Data de vencimento do boleto: <strong>" . date_to_br($p['data_vencimento']) . "</strong><br />";
+		$t .= "Nome: <strong>" . $p['nome'] . "</strong><br />";
+		$t .= "E-mail: <a href='mailto:" . $p['email'] . "'><strong>" . $p['email'] . "</strong></a><br />";
+		$t .= "CPF: <strong>" . $p['cpf'] . "</strong><br />";
+		$t .= "Instituição: <strong>" . $p['instituicao'] . "</strong><br />";
+		$t .= "Telefone: <strong>" . $p['telefone'] . "</strong><br />";
+		$t .= "Celular: <strong>" . $p['celular'] . "</strong><br />";
+		$t .= "Endereço: <strong>" . $p['endereco'] . "</strong><br />";
+		$t .= "CEP: <strong>" . $p['cep'] . "</strong><br />";
+		$t .= "Cidade/UF: <strong>" . $p['cidade'] . "/" . strtoupper($p['uf']) . "</strong><br />";
+		$t .= "Arquivo(s): <strong>" . $arquivos . "</strong><br />";
+		$t .= "Descrição: <strong>" . $p['descricao'] . "</strong></p>";
+		
+		$t .= "<hr>";
+		$t .= "<p><strong>Para imprimir o boleto, copie-e-cole o seguinte endereço em seu navegador, ou clique no link:</strong><br/>";
+		$t .= "<a href='" . get_site_url() . "/ver-boleto/?key=" . $key_boleto . "'>" . get_site_url() . "/ver-boleto/?key=" . $key_boleto . "</a></p>";
+		$t .= "<br/><p>Atenciosamente,<br/>";
+		$t .= "Equipe " . get_bloginfo('name') . "<br/>";
+		$t .= "<a href='" . get_site_url() . "'>" . get_site_url() . "</a></p>";
+		$subject = "NOVO PEDIDO - " . $nosso_numero;
+		self::_send_mail(self::_get_setting('email'), $subject, $t);
+		//echo $t;
+		
+		// renderiza comprovante
+		?>
+		<h2 class="tit-confirmacao-pedido">Número do pedido: <span id="numero-pedido"><?php echo $nosso_numero; ?></span></h2>
+		<h3>Recebemos com sucesso os detalhes de seu pedido. Se for necessário complementar alguma informação, entraremos em contato preferencialmente por e-mail.</h3>
+		<div class="btn-holder-success"><a href="<?php echo get_site_url() . "/ver-boleto/?key=" . $key_boleto; ?>" target="_blank" class="btn btn-large btn-success" type="button" style="color: #fff !important;">Imprimir Boleto</a></div>
+		<h4>Orientações importantes:</h4>
+		<ul class="orientacoes">
+			<li>Um e-mail foi enviado para <strong><?php echo $p['email']; ?></strong> contendo informações importantes. Guarde-o pois ele comprova a efetivação de seu pedido.</li>
+			<li>Se não receber o e-mail, verifique se ele não está em sua caixa de SPAM por engano.</li>
+			<li>O pedido só será confirmado após o pagamento do boleto bancário e a confirmação de pagamento pela instituição bancária. Demora em média 3 dias úteis entre o pagamento e a confirmação pelo banco.</li>
+			<li><a href="<?php echo get_site_url() . "/ver-boleto/?key=" . $key_boleto; ?>" target="_blank"><strong>Clique aqui</strong></a> para imprimir seu boleto bancário. (Obs.: taxa de R$ <?php echo number_format($p['taxa'], 2, ",", ""); ?> por boleto.)</li>
+			<li>Você também poderá imprimi-lo posteriormente através do link informado no e-mail que lhe foi enviado, ou informando seus dados na página de <a href="<?php echo get_site_url() . "/segunda-via-de-boleto/"; ?>">Segunda Via de Boleto</a>.</li>
+			<li>Em caso de dúvidas ou problemas, <a href="<?php echo get_site_url() . "/fale-conosco/"; ?>">Fale Conosco</a>.</li>
+		</ul>
+		
+		<?php
+	}		
 	
 	###############################################################################################################
 
@@ -371,7 +812,6 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 	# DESCRIPTION: renderiza a página Painel de Boletos, shortcode trajettoria-painel-boletos
 	public static function pagina_painel_boletos()
 	{
-		
 		global $wpdb;
 		
 		// abaixo: exemplos
@@ -1077,6 +1517,100 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		$vars[] = 'trajettoria_page';
 		return $vars;
 	}	
+
+	###############################################################################################################
+
+	# FUNCTION: _list_files
+	# DESCRIPTION: lista os nomes dos arquivos indicados para upload num html com quebras de linha <br>
+
+	private static function _list_files() 
+	{
+		$files = $_FILES['arquivos'];
+		if ( is_array( $files ) ) {
+			
+			$html = array();
+			foreach ( $files['name'] as $value )
+			{	
+				$html[] = $value;
+			}
+			$html = implode("<br />", $html);
+			return $html;
+		}
+		else return "Nenhum arquivo.";
+	}
+	
+	###############################################################################################################
+
+	# FUNCTION: _process_uploads
+	# DESCRIPTION: move os arquivos armazenados na pasta temporária do servidor após submissão de um form
+	# e retorna array com nomes de arquivos finais na pasta de destino
+
+	private static function _process_uploads( $allowedTypes, $maxFilesize ) 
+	{
+		$files = $_FILES['arquivos'];
+		$processedFiles = NULL;
+		
+		if ( is_array( $files ) ) {
+			
+			foreach ( $files['name'] as $key => $value ) {
+				
+				// work only with successfully uploaded files
+				if ( $files['error'][$key] == 0 ) {
+					
+					// full actual file name (it'll be sanitized later)
+					$filename = $files['name'][$key];
+					
+					// get the file extension
+					$filetype = wp_check_filetype( $filename );
+					
+					// check if file is allowed by extension. If it's not allowed, echo the error and move to next file			
+					if ( !in_array( $filetype['ext'], $allowedTypes ) ) {
+						echo "Falha no envio do arquivo '$filename'. Verifique se a extensao corresponde a uma das permitidas.";
+						continue;
+					}
+					// get the file size
+					$filesize = $files['size'][$key];
+					
+					// check if file size exceeds $maxFilesize. If it does, echo the error end move to next file
+					if ( $filesize > $maxFilesize ) {
+						echo "Falha no envio do arquivo '$filename'. O tamanho ultrapassou o limite permitido.";
+						continue;
+					}		
+					// temporary file name assigned by the server
+					$filetmp = $files['tmp_name'][$key];
+					
+					// drop the extension, sanitize file name and remove accents, we need just the clean title
+					$filetitle = remove_accents( sanitize_file_name( basename( $filename, '.'.$filetype['ext'] ) ) );
+					
+					// construct fresh new sanitized file name
+					$filename = $filetitle.'.'.$filetype['ext'];
+					
+					// all processed files will be found here
+					$upload_dir = plugin_dir_path( __FILE__ ).'uploads';
+					
+					// resolve existing file names by adding '_$i', where $i is the number of times it has just repeated 
+					$i = 1;
+					while ( file_exists( $upload_dir.'/'.$filename ) )
+					{
+						$filename = $filetitle.'_'.$i.'.'.$filetype['ext'];
+						$i++;
+					}
+					
+					// final file path
+					$filedest = $upload_dir.'/'.$filename;
+					
+					// move the file from temp dir to final file path
+					if ( !copy( $filetmp, $filedest ) )
+					{
+						echo "O arquivo '$filename' não pôde ser copiado para a pasta destino.";
+					}
+					
+					$processedFiles[] = $filename;
+				}
+			}
+		}
+		return $processedFiles;
+	}
 	
 	###############################################################################################################
 
@@ -1103,8 +1637,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		$from = self::_get_setting( "email" );
 		$name = self::_get_setting( "email_from_alias" );
 		
-		SendMail($host, $auth, $secure, $port, $username, $password, $from, $name, $to, $subject, $content);
-		
+		return SendMail($host, $auth, $secure, $port, $username, $password, $from, $name, $to, $subject, $content);
 	}
 
 	###############################################################################################################
@@ -1119,21 +1652,32 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		
 		return get_site_url() . "/ver-boleto/?key=$key&nosso_numero=$nosso_numero&cpf=$cpf";
 	}
+	
+	###############################################################################################################
+
+	# FUNCTION: _get_due_date
+	# DESCRIPTION: obtém a data de vencimento a partir de "start" (YYYY-MM-DD), somando "days"
+	# Data retornada no formato YYYY-MM-DD
+	private static function _get_due_date($start, $days)
+	{
+		$start = strtotime($start);
+		return date('Y-m-d', strtotime('+' . $days . ' day', $start));
+	}
+	
 
 	###############################################################################################################
 	
 	# FUNCTION: _get_servico
 	# DESCRIPTION: retorna um array com os detalhes do serviço com post_id igual a 'prod_id'
 	# Este array possui as chaves: id, title, content, excerpt, usar_boleto, valor, taxa, permitir_upload, 
-	# label_descricao, dias_vencimento, formatos_arquivo
+	# label_descricao, dias_vencimento, formatos_arquivo, data_vencimento
 	private static function _get_servico($prod_id)
 	{
 		$p = get_post($prod_id);
 		if($p)
 		{
-		
-			// TODO: checar se é um "serviço"
-			
+			if($p->post_type != 'servico') return FALSE;
+
 			$r = array();
 			$r['id'] = $prod_id;
 			$r['title'] = $p->post_title;
@@ -1146,8 +1690,16 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 			$r['label_descricao'] = get_post_meta($prod_id, 'boleto-label-descricao', TRUE);
 			$r['dias_vencimento'] = get_post_meta($prod_id, 'boleto-dias-vencimento', TRUE);
 			
-			//TODO: recuperar valores globais se estiver em branco ou com erro algum dos campos acima
-			//TODO: recuperar os formatos de arquivo
+			
+			if(!$r['usar_boleto']) return FALSE;
+			
+			if(empty($r['taxa'])) $r['taxa'] = self::_get_setting('taxa');
+			if(empty($r['label_descricao'])) $r['label_descricao'] = self::_get_setting('label_descricao');
+			if(empty($r['dias_vencimento'])) $r['dias_vencimento'] = self::_get_setting('dias_vencimento');
+			$agora = NowDatetime();
+			$r['data_vencimento'] = self::_get_due_date($agora, $r['dias_vencimento']);
+			
+			$r['formatos_arquivo'] = self::_get_setting('formatos_arquivo');
 			
 			return $r;
 		}

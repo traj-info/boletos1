@@ -111,7 +111,7 @@ class Servicos extends WP_Plugin_Base {
 			</div>
 			
 			<div style="width: 25%; float: left; font-size: 14px;">
-			<p><strong>* Permitir upload de arquivos?</strong><br/><input type="checkbox" name="boleto-permitir-upload" id="boleto-permitir-upload" <?php echo $checked_permitir_upload; ?>/></p>
+			<p><strong>Permitir upload de arquivos?</strong><br/><input type="checkbox" name="boleto-permitir-upload" id="boleto-permitir-upload" <?php echo $checked_permitir_upload; ?>/></p>
 			</div>
 
 			<div style="clear: both;"></div>
@@ -151,12 +151,12 @@ class Servicos extends WP_Plugin_Base {
 			$valor = "ERRO";
 		}
 		
-		if(!preg_match("/^[0-9]+(?:\,[0-9]{2})?$/im", $taxa))
+		if(!empty($taxa) && !preg_match("/^[0-9]+(?:\,[0-9]{2})?$/im", $taxa))
 		{
 			$taxa = "ERRO";
 		}
 		
-		if(!preg_match("/^[0-9]+?$/im", $dias_vencimento))
+		if(!empty($dias_vencimento) && !preg_match("/^[0-9]+?$/im", $dias_vencimento))
 		{
 			$dias_vencimento = "ERRO";
 		}

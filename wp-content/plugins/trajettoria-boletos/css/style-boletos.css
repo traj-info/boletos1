@@ -249,3 +249,48 @@ select.opcao
 	width: 700px;
 	margin: -250px 0 0 -330px;
 }
+
+label.error
+{
+	color: red !important;
+	font-weight: bold;
+	font-size: 11px !important;
+}
+
+.rev-holder
+{
+	clear: both;
+}
+
+.rev-label
+{
+	float: left;
+	width: 150px;
+	background: #eee;
+	font-weight: bold;
+	text-align: right;
+	padding: 5px;
+	font-size: 14px;
+	margin: 2px 0;
+}
+
+.rev-data
+{
+	float: left;
+	text-align: left;
+	padding: 5px;
+	font-size: 14px;	
+}
+
+.btn-holder-success
+{
+	text-align: center;
+	padding: 20px;
+	background: #eee;
+	margin: 15px 0;
+}
+
+#numero-pedido
+{
+	color: #f00 !important;
+}

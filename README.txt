@@ -1,4 +1,29 @@
-﻿#descrição
+﻿-----> SEMPRE COLOCAR A DATA E O AUTOR, CONFORME O MODELO INICIAL ----<
+v.09
+04/09/12 - Francisco
+
+#descrição
+Finalizado processo de pedido e geração de boleto.
+
+#changelog
+acrescentado "return" em _send_mail()
+aperfeiçoado _get_servico()
+tirado "*" do campo "permitir upload de arquivos" e corrigido bug nos campos de preechimento opcionais, em class-post_types.php
+rotinas de validação do form. de pedido, incluindo ajax para dígito verificador do CPF
+concluída geração de boleto
+
+#known issues
+CSS ul etapas do pedido não indicando etapa atual
+
+#todo
+checar em popups.php se é um usuário admin logado
+deletar arquivos associados a um boleto, na exclusão do boleto
+deletar arquivos enviados se o usuário clicar em "anterior" na etapa 2 do form. de pedido
+corrigir CSS do ul "etapas" do pedido
+
+=====================================================================================
+v.075
+#descrição
 Desenvolvimento dos pop-up's e aperfeiçoamento da interface do painel de boletos 
 
 #changelog
