@@ -33,8 +33,8 @@ class WP_Plugin_Setup extends WP_Plugin_Base {
     
 	private function addRewriteRules()
 	{
-        add_rewrite_rule( 'servicos/page/?([0-9]{1,})', 'index.php?servicos_page=servicos&paged=$matches[1]', 'top' );
-        add_rewrite_rule( 'servicos', 'index.php?trajettoria_page=servicos&paged=1', 'top' );
+        //add_rewrite_rule( 'servicos/page/?([0-9]{1,})', 'index.php?servicos_page=servicos&paged=$matches[1]', 'top' );
+        //add_rewrite_rule( 'servicos', 'index.php?trajettoria_page=servicos&paged=1', 'top' );
 		add_rewrite_rule( 'ver-boleto', 'index.php?trajettoria_page=get_boleto', 'top' );
     }
 	

@@ -294,3 +294,70 @@ label.error
 {
 	color: #f00 !important;
 }
+
+h1
+{
+	padding: 20px 10px !important;
+}
+
+li.active
+{
+	font-weight: bold !important;
+	color: #000 !important;
+}
+
+/* PRICING TABLE */
+.prices th
+{
+	font-size: 20px !important;
+	color: #d34806 !important;
+}
+
+.prices td
+{
+	vertical-align: top;
+}
+
+.left-dest
+{
+	font-weight: bold;
+}
+
+.prices ul li
+{
+	background: none !important;
+	text-indent: 0 !important;
+	font-size: 16px !important;
+	margin-bottom: 8px !important;
+}
+
+.prices ul
+{
+	margin-left: 0 !important;
+}
+
+tr.stripped-dest td, tr.stripped-dest th
+{
+	background: #eee !important;
+}
+
+tr.valor td
+{
+	font-size: 18px;
+	font-weight: bold;
+	text-align: center !important;
+}
+
+tr.solicite a
+{
+	color: #fff !important;
+	padding: 8px 25px !important;
+}
+
+tr.solicite td
+{
+	padding: 20px 0 !important;
+	text-align: center !important;
+}
+
+/* END PRICING TABLE */

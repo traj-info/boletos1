@@ -1,4 +1,24 @@
-﻿-----> SEMPRE COLOCAR A DATA E O AUTOR, CONFORME O MODELO INICIAL ----<
+﻿v.0.95
+05/09/12 - Francisco
+
+#descrição
+
+
+#changelog
+corrigido: deleção de arquivos enviados na etapa 1 após clicar em "anterior" na etapa 2
+
+
+#known issues
+mensagem de erro de validação do CPF não está aparecendo pelo plugin validate
+
+#todo
+formulário de segunda via de boleto
+texto de prenchimento "tipos de estudo"
+checar em popups.php se é um usuário admin logado
+deletar arquivos associados a um boleto, na exclusão do boleto
+corrigir CSS do ul "etapas" do pedido
+
+-----> SEMPRE COLOCAR A DATA E O AUTOR, CONFORME O MODELO INICIAL ----<
 v.09
 04/09/12 - Francisco
 

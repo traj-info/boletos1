@@ -36,13 +36,7 @@ foreach ($mantra_options as $key => $value) {
 		<div id="footer2">
 <?php if ( has_nav_menu( 'footer' ) ) wp_nav_menu( array( 'container' => 'nav', 'container_class' => 'footermenu', 'theme_location' => 'footer' ) ); ?>
 			<div id="site-info" >
-				<a href="<?php echo home_url( '/' ) ?>" title="<?php echo esc_attr( get_bloginfo( 'name', 'display' ) ); ?>" rel="home"><?php bloginfo( 'name' ); ?></a>
-			| <?php echo '<b title="'.$mantra_theme_data['Version'].'">'.$mantra_theme_data['Name'].'</b> Theme by '.$mantra_theme_data['Author']; ?> | Powered by
-			<?php do_action( 'mantra_credits' ); ?>
-				<a href="<?php echo esc_url('http://wordpress.org/' ); ?>"
-						title="<?php esc_attr_e('Semantic Personal Publishing Platform', 'mantra'); ?>">
-					<?php printf(' %s.', 'WordPress' ); ?>
-				</a>
+				<a href="<?php echo home_url( '/' ) ?>" title="<?php echo esc_attr( get_bloginfo( 'name', 'display' ) ); ?>" rel="home">&copy; <?php echo date('Y'); ?> <?php bloginfo( 'name' ); ?></a>. Todos os direitos reservados.
 			</div>
 
 			<!-- #site-info -->

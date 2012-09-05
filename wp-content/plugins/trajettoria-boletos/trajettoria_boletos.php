@@ -117,12 +117,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		global $wpdb;
 		
         $page = get_query_var('trajettoria_page');
-        if( $page === 'servicos' )
-		{
-            require_once('template-servicos.php');
-            exit();
-        }
-		else if ( $page === 'get_boleto' )
+		if ( $page === 'get_boleto' )
 		{
 			$key = get_query_var('key');
 			$nosso_numero = get_query_var('nosso_numero');
@@ -269,6 +264,21 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		if(isset($_POST['old_data']))
 		{
 			$d = unserialize(urldecode($_POST['old_data']));
+			
+			if(isset($_POST['arquivos'])) // já havia sido feito upload de algum arquivo na etapa 2, e estamos voltando à etapa 1
+			{
+				// deletar arquivos previamente enviados.
+				
+				$arq = explode(",", $_POST['arquivos']);
+				if(is_array($arq))
+				{
+					foreach($arq as $a)
+					{
+						@unlink( plugin_dir_path( __FILE__ ). 'uploads/' . $a );
+					}
+				}
+			}
+			
 			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function(){
@@ -395,6 +405,79 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 		</div>
 		</div>
 		
+		<script type="text/javascript">
+		jQuery(document).ready(function(){
+		
+			// Validate
+			jQuery('#frmPedido').validate({
+				messages: {
+					nome: 'Digite seu nome',
+					email: {
+						required: 'Digite seu e-mail',
+						email: 'Digite um e-mail válido'
+					},
+					cpf: 'Digite seu CPF no formato 99.999.999-9',
+					instituicao: 'Digite o nome da instituição à qual esteja vinculado',
+					telefone: 'Digite seu telefone',
+					celular: 'Digite seu celular',
+					endereco: 'Digite seu endereço completo, incluindo complementos',
+					cep: 'Digite seu CEP no formato 99999-999',
+					cidade: 'Digite o nome de sua cidade',
+					uf: 'Selecione seu Estado',
+					descricao: 'Digite a descrição dos serviços solicitados',
+					termos: 'Leia os Termos de Serviço e marque esta caixa se estiver de acordo.'
+				}
+			});
+
+			// CPF validation
+			jQuery('#cpf').blur(function(){
+				var cpf = jQuery(this).val();
+				
+				jQuery.ajax({
+					url: "<?php echo plugins_url("check_cpf.php",__FILE__); ?>?cpf=" + cpf,
+					dataType: "html"
+				}).done(function(data){
+					if(data == 'ok')
+					{
+						jQuery("#val-cpf").hide();
+					}
+					else
+					{
+						jQuery("#cpf").val('');
+						jQuery("#val-cpf").html('Digite um CPF válido.');
+						jQuery("#val-cpf").show();
+					}
+				});
+			});
+		
+			// Input masks
+			jQuery('#cpf').mask('999.999.999-99');
+			jQuery('#telefone').mask('(99) 99999999? ********************');
+			jQuery('#celular').mask('(99) 99999999?9');
+			jQuery('#cep').mask('99999-999');
+			
+			// Popover endereço
+			jQuery('#endereco').popover({
+				trigger: "focus",
+				title: "Exemplo:",
+				content: "<h4>Av. Paulista, 2200 - cj. 161</h4>"
+			})
+		
+		
+		
+		});
+		
+		function redireciona(url)
+		{
+			window.location.href = url;
+		}
+		
+		function getExtension(filename)
+		{
+			return filename.split('.').pop().toLowerCase();
+		}
+		</script>
+
 		<?php if ($s['permitir_upload']) : ?>
 		
 		<div class="control-group">
@@ -463,48 +546,7 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 					jQuery('#novo-arquivo').show();
 				}
 			});
-			
-			// Validate
-			jQuery('#frmPedido').validate({
-				messages: {
-					nome: 'Digite seu nome',
-					email: {
-						required: 'Digite seu e-mail',
-						email: 'Digite um e-mail válido'
-					},
-					cpf: 'Digite seu CPF no formato 99.999.999-9',
-					instituicao: 'Digite o nome da instituição à qual esteja vinculado',
-					telefone: 'Digite seu telefone',
-					celular: 'Digite seu celular',
-					endereco: 'Digite seu endereço completo, incluindo complementos',
-					cep: 'Digite seu CEP no formato 99999-999',
-					cidade: 'Digite o nome de sua cidade',
-					uf: 'Selecione seu Estado',
-					descricao: 'Digite a descrição dos serviços solicitados'
-				}
-			});
 
-			// CPF validation
-			jQuery('#cpf').blur(function(){
-				var cpf = jQuery(this).val();
-				
-				jQuery.ajax({
-					url: "<?php echo plugins_url("check_cpf.php",__FILE__); ?>?cpf=" + cpf,
-					dataType: "html"
-				}).done(function(data){
-					if(data == 'ok')
-					{
-						jQuery("#val-cpf").hide();
-					}
-					else
-					{
-						jQuery("#cpf").val('');
-						jQuery("#val-cpf").html('Digite um CPF válido.');
-						jQuery("#val-cpf").show();
-					}
-				});
-			});
-			
 			// File types validation
 			jQuery('.input-file').change(function(){
 			
@@ -522,36 +564,19 @@ class TrajettoriaBoletos extends WP_Plugin_Setup {
 					}
 				}
 			});
-			
-			// Input masks
-			jQuery('#cpf').mask('999.999.999-99');
-			jQuery('#telefone').mask('(99) 99999999? ********************');
-			jQuery('#celular').mask('(99) 99999999?9');
-			jQuery('#cep').mask('99999-999');
-			
-			// Popover endereço
-			jQuery('#endereco').popover({
-				trigger: "focus",
-				title: "Exemplo:",
-				content: "<h4>Av. Paulista, 2200 - cj. 161</h4>"
-			})
-			
-		
+
 		});
-		
-		function redireciona(url)
-		{
-			window.location.href = url;
-		}
-		
-		function getExtension(filename)
-		{
-			return filename.split('.').pop().toLowerCase();
-		}
-		
 		</script>
 		
 		<?php endif; ?>
+		
+		
+		<div class="control-group">
+		<label class="control-label" for="termos"></label>
+		<div class="controls">
+			<input type="checkbox" class="required" name="termos" id="termos" />&nbsp;&nbsp;Li e estou de acordo com os <a href="<?php echo get_site_url(); ?>/termos-de-servico/" target="_blank">Termos de Serviço</a>.
+		</div>
+		</div>
 		
 		<?php
 		echo "<div class='form-actions'>";
